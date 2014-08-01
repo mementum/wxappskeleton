@@ -1,0 +1,345 @@
+#!/usr/bin/env python
+# -*- coding: utf-8; py-indent-offset:4 -*-
+################################################################################
+# 
+#  Copyright (C) 2014 Daniel Rodriguez
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+################################################################################
+import collections
+import cPickle
+import inspect
+import itertools
+import sys
+import types
+import weakref
+import wx
+
+from configcls import MutableSequence
+
+def doout(*args):
+    if True:
+        frame = sys._getframe(1)
+        try:
+            funcname = frame.f_locals['self'].__class__.__name__
+        except KeyError: # self not present in f_locals
+            funcname = ''
+
+        funcname = '.'.join([funcname, frame.f_code.co_name]).lstrip('.')
+
+        print funcname, args
+    return True
+
+
+class BindingAny(object):
+    valclass = None
+    wrattr = 'Write'
+    rdattr = 'Read'
+
+    ncache = dict()
+    callbacks = collections.defaultdict(weakref.WeakKeyDictionary)
+
+    def __init__(self, name, **kwargs):
+        assert doout(name)
+        self.name = name
+        self.fullname = '/'.join([kwargs.get('prefix', ''), self.name]).lstrip('/')
+
+        self.doconfig = kwargs.get('config', True)
+        # FIXME: won't work for Lists and MutableSequences
+        self.defval = kwargs.get('default', self.getdefault())
+        self.install()
+
+    def getdefault(self):
+        return self.valclass()
+
+    @property
+    def config(self):
+        return wx.Config.Get()
+
+    def wr(self, value):
+        assert doout(value)
+        if self.doconfig:
+            wrfunc = getattr(self.config, self.wrattr)
+            wrfunc(self.fullname, self.prewr(value))
+            self.config.Flush()
+
+    def rd(self):
+        assert doout()
+        if self.doconfig:
+            rdfunc = getattr(self.config, self.rdattr)
+            # if defval going to be returned pass it first through prewr
+            # changes will be undone by postrd
+            value = rdfunc(self.fullname, self.prewr(self.defval))
+        else:
+             value = self.prewr(self.defval)
+        return self.postrd(value)
+
+    def postrd(self, value):
+        return value
+
+    def prewr(self, value):
+        return value
+
+    def addcallback(self, callback):
+        assert doout(callback)
+        # im_self ensures if the object is not there it will not be found
+        self.callbacks[self.name][callback.im_self] = callback
+        # Tell the callback the current value
+        # (it will for example check/uncheck a checkbox)
+        callback(self.__get__(self, self.__class__))
+
+    def install(self):
+        for i in itertools.count(1):
+            locals_ = sys._getframe(i).f_locals
+            if '__module__' in locals_:
+                locals_[self.name] = self
+                break
+            
+            cls = locals_['self'].__class__
+            if self.__class__ != cls:
+                if not hasattr(cls, self.name):
+                    setattr(cls, self.name, self)
+                break
+
+    def __get__(self, obj, cls=None):
+        assert doout(obj, cls)
+        if obj is None:
+            # this prevents early auto-setting if for example a decorator
+            # does a "dir" of the class attributes even before the registry
+            # object has been created
+            # and additionally allows access to the object itself
+            return self
+        try:
+            return self.postrd(self.ncache[self.name])
+        except KeyError:
+            self.ncache[self.name] = value = self.prewr(self.rd())
+            return self.postrd(value)
+
+    def setcmp(self, val1, val2):
+        return val1 == val2
+
+    def __set__(self, obj, value):
+        assert doout(obj, value)
+        try:
+            if self.setcmp(self.ncache[self.name], value):
+                return
+        except KeyError:
+            pass
+
+        self.ncache[self.name] = self.prewr(value)
+        self.wr(value)
+
+        map(lambda callback: callback(value), self.callbacks[self.name].itervalues())
+
+
+class BindingBool(BindingAny):
+    valclass = bool
+    wrattr = 'WriteBool'
+    rdattr = 'ReadBool'
+
+    def __init__(self, name, **kwargs):
+        BindingAny.__init__(self, name, default=True, **kwargs)
+        assert doout(name)
+
+class BindingString(BindingAny):
+    valclass = str
+    wrattr = 'Write'
+    rdattr = 'Read'
+
+    def __init__(self, name, **kwargs):
+        BindingAny.__init__(self, name, **kwargs)
+        assert doout(name)
+
+class BindingInt(BindingAny):
+    valclass = int
+    wrattr = 'WriteInt'
+    rdattr = 'ReadInt'
+
+    def __init__(self, name, **kwargs):
+        BindingAny.__init__(self, name, **kwargs)
+        assert doout(name)
+
+class BindingFloat(BindingAny):
+    valclass = int
+    wrattr = 'WriteInt'
+    rdattr = 'ReadInt'
+
+    def __init__(self, name, **kwargs):
+        BindingAny.__init__(self, name, default=True, **kwargs)
+        assert doout(name)
+
+
+class BindingList(BindingAny):
+    valclass = MutableSequence
+    wrattr = 'Write'
+    rdattr = 'Read'
+
+    def getdefault(self):
+        return self.valclass(owner=self)
+
+    def setcmp(self, val1, val2):
+        return False
+
+    def postrd(self, value):
+        # cPickle expexts str but wx.Config returns unicode
+        return self.valclass(iterable=cPickle.loads(str(value)), owner=self)
+
+    def prewr(self, value):
+        return cPickle.dumps(value)
+
+
+class MetaAuto(type):
+    def __getattribute__(cls, name):
+        attrname = type.__getattribute__(cls, 'attrname')
+        if name == 'attrname':
+            return attrname
+        def decorator(*args, **kwargs):
+            def wrapper(function):
+                setattr(function, attrname, name)
+                return function
+
+            if len(args) == 1 and type(args[0]) == types.FunctionType:
+                # Allow for attribute to be set without () if no additional parameters are needed
+                return wrapper(args[0])
+
+            return wrapper
+        return decorator
+
+class AutoAttribute(object):
+    __metaclass__ = MetaAuto
+
+class AutoBind(AutoAttribute):
+    attrname = '_event_name'
+
+class AutoCallback(AutoAttribute):
+    attrname = '_var_name'
+
+# NOT USED RIGHT NOW
+def WidgetBindings(cls):
+    base1 = cls.__bases__[0] # wx.Frame/Dialog or similar
+    baseoldinit = base1.__init__
+    def basenewinit(self, *args, **kwargs):
+        assert doout()
+        baseoldinit(self, *args, **kwargs)
+        modclsname = self.__class__.__module__ + '.' + self.__class__.__name__
+        for widget in BindingWidget.defined[modclsname]:
+            widget(owner=self)
+
+    base1.__init__ = basenewinit
+    return cls
+
+class BindingWidget(object):
+    widgets = dict()
+    wprefix = None
+
+    def __init__(self, name, **kwargs):
+        assert doout(name)
+        self.name = name
+        self.wname = kwargs.get('wname', None)
+
+        self.install()
+        self.findwidget()
+        prefix = '/'.join([kwargs.get('prefix', ''), self.name]).lstrip('/')
+        kwargs['prefix'] = prefix
+        for bindname, bindclass in self.bindings:
+            bindclass(bindname, **kwargs)
+        self.dobindings()
+
+    def install(self):
+        for i in itertools.count(1):
+            frame = sys._getframe(i)
+            owner = frame.f_locals['self']
+            if not isinstance(owner, self.__class__):
+                self.owner = owner
+                setattr(self.owner, self.name, self)
+                break
+
+    def findwidget(self):
+        assert doout()
+        if not self.wname:
+            self.wname = 'm_' + self.wprefix.lower() + self.name.lower()
+
+        for attr in dir(self.owner):
+            if attr.lower() == self.wname:
+                self.widgets[self.owner] = getattr(self.owner, attr, None)
+                break
+
+        widget = self.widgets.get(self.owner, None)
+        assert widget is not None, 'Failed to acquire widget - ' + self.wname
+
+    def dobindings(self):
+        for methodname, method in inspect.getmembers(self.__class__, inspect.ismethod):
+            if hasattr(method, AutoBind.attrname):
+                event = getattr(wx, method._event_name)
+                boundmethod = method.__get__(self, self.__class__)
+                self.widgets[self.owner].Bind(event, boundmethod)
+            elif hasattr(method, AutoCallback.attrname):
+                boundmethod = method.__get__(self, self.__class__)
+                attr = getattr(self.__class__, method._var_name)
+                attr.addcallback(boundmethod)
+
+
+class BindingCheckBox(BindingWidget):
+    wprefix = 'checkBox'
+    bindings = (('value', BindingBool),)
+
+    def __init__(self, name, **kwargs):
+        assert doout(name, kwargs)
+        BindingWidget.__init__(self, name, **kwargs)
+
+    @AutoBind.EVT_CHECKBOX
+    def OnCheckBox(self, event):
+        assert doout(event)
+        self.value = event.GetInt()
+
+    @AutoCallback.value
+    def OnValueChange(self, value):
+        assert doout(value)
+        self.widgets[self.owner].SetValue(value)
+
+
+class BindingComboBox(BindingWidget):
+    wprefix = 'comboBox'
+    bindings = (('index', BindingInt),
+                ('items', BindingList),
+                ('selection', BindingString),)
+
+    def __init__(self, name, **kwargs):
+        assert doout(name, kwargs)
+        BindingWidget.__init__(self, name, **kwargs)
+
+    @AutoBind.EVT_COMBOBOX
+    def OnComboBox(self, event):
+        assert doout(event)
+        self.index = event.GetInt()
+        self.selection = event.GetString()
+
+    @AutoCallback.index
+    def OnIndexChange(self, value):
+        assert doout(value)
+        self.widgets[self.owner].SetSelection(value)
+
+    @AutoCallback.items
+    def OnItemsChange(self, value):
+        assert doout(value)
+        #self.widgets[self.owner].SetValue(value)
+
+
+    @AutoCallback.selection
+    def OnSelectionChange(self, value):
+        assert doout(value)
+        self.widgets[self.owner].SetValue(value)
+
+
