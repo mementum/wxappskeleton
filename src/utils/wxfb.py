@@ -30,16 +30,13 @@ import wx
 from configcls import MutableSequence
 
 def doout(*args):
-    if True:
+    if False:
         frame = sys._getframe(1)
-        try:
-            funcname = frame.f_locals['self'].__class__.__name__
-        except KeyError: # self not present in f_locals
-            funcname = ''
+        funcname = frame.f_code.co_name
+        if 'self' in frame.f_locals:
+            funcname = frame.f_locals['self'].__class__.__name__ + '.' + funcname
 
-        funcname = '.'.join([funcname, frame.f_code.co_name]).lstrip('.')
-
-        print funcname, args
+        print funcname, '(', args, ')'
     return True
 
 
@@ -134,7 +131,6 @@ class BindingAny(object):
             return self
 
         objbindname = self.makebindname(obj)
-        print '__GET__, bindname is', objbindname
 
         try:
             return self.ncache[objbindname]
@@ -147,7 +143,6 @@ class BindingAny(object):
     def __set__(self, obj, value, cb=True):
         assert doout(obj, value)
         objbindname = self.makebindname(obj)
-        print '__SET__, bindname is', objbindname
         try:
             if self.ncache[objbindname] == value:
                 return
@@ -233,6 +228,7 @@ class AutoBind(AutoAttribute):
 
 class AutoCallback(AutoAttribute):
     attrname = '_var_name'
+
 
 ##################################################
 # NOT USED RIGHT NOW
@@ -338,6 +334,7 @@ class BindingCheckBox(BindingWidget):
     @AutoBind.EVT_CHECKBOX
     def OnCheckBox(self, event):
         assert doout(event)
+        event.Skip()
         # self.value = event.GetInt()
         # This avoids a callback to 
         self._set('value', event.GetInt())
@@ -358,6 +355,7 @@ class BindingTextCtrl(BindingWidget):
     @AutoBind.EVT_TEXT
     def OnText(self, event):
         assert doout(event)
+        event.Skip()
         print 'TEXT CHANGING'
         self._set('value', event.GetString())
 
@@ -377,6 +375,7 @@ class BindingTextCtrlFocus(BindingWidget):
     @AutoBind.EVT_KILL_FOCUS
     def OnKillFocus(self, event):
         assert doout(event)
+        event.Skip()
         self._set('value', self.widget.GetValue())
 
     @AutoCallback.value
@@ -407,17 +406,20 @@ class BindingComboBox(BindingWidget):
     @AutoBind.EVT_COMBOBOX
     def OnComboBox(self, event):
         assert doout(event)
+        event.Skip()
         self._set('selection', event.GetInt())
         self._set('stringselection', event.GetString())
 
     @AutoBind.EVT_TEXT
     def OnText(self, event):
         assert doout(event)
+        event.Skip()
         self.value = event.GetString()
 
     @AutoBind.EVT_TEXT_ENTER
     def OnTextEnter(self, event):
         assert doout(event)
+        event.Skip()
         self.value = event.GetString()
         self.items.append(self.value)
         self.stringselection = self.value
@@ -462,6 +464,7 @@ class BindingFilePicker(BindingWidget):
     @AutoBind.EVT_FILEPICKER_CHANGED
     def OnFilePickerChanged(self, event):
         assert doout(event)
+        event.Skip()
         # value can also be gotten from self.widget
         self._set('path', event.GetPath())
 
@@ -480,6 +483,7 @@ class BindingDirPicker(BindingWidget):
     @AutoBind.EVT_DIRPICKER_CHANGED
     def OnFilePickerChanged(self, event):
         assert doout(event)
+        event.Skip()
         # value can also be gotten from self.widget
         self._set('path', event.GetPath())
 

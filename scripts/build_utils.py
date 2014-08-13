@@ -117,8 +117,18 @@ class AppInfo(object):
         except Exception, e:
             raise e
 
-    def getappinfo(self, varname, defvalue=None):
-        return getattr(self.appinfomod, varname, defvalue)
+    def getappinfo(self, varname, defvalue=None, case=True):
+        if case:
+            return getattr(self.appinfomod, varname, defvalue)
+
+        lowvarname = varname.lower()
+        for attrname in dir(self.appinfomod):
+            if lowvarname == attrname.lower():
+                return getattr(self.appinfomod, attrname, defvalue)
+
+        # Not found -> return default value
+        return defvalue
+
 
     def getfilepath(self, dirname, appvar, ext, optional=None):
         filedir = self.dirs[dirname]
@@ -182,7 +192,6 @@ class AppInfo(object):
         ifile = open(ifilepath) # open original file
         for line in ifile:
             if 'a.scripts' in line:
-                print 'FOUND a.scripts and nodebug is', nodebug
                 line = '          a.scripts'
                 if nodebug:
                     line += " + [('O','','OPTION')]"
@@ -194,6 +203,31 @@ class AppInfo(object):
         ifile.close() # close original file
         os.remove(ifilepath) # remove original file
         shutil.move(ofilepath, ifilepath) # move new file
+
+    def uac_specfile(self):
+        #Create temp file
+        uac_admin = self.getappinfo('AppUACAdmin', defvalue=False, case=False)
+        uac_uiaccess = self.getappinfo('AppUACUiAccess', defvalue=False, case=False)
+        ofilehandle, ofilepath = tempfile.mkstemp() # open temporary file
+        ofile = os.fdopen(ofilehandle, 'w')  # wrap fhandle in "file object"
+
+        ifilepath = self.getspecfile()
+        ifile = open(ifilepath) # open original file
+        for line in ifile:
+
+            ofile.write(line)
+            if 'name=' in line:
+                if uac_admin:
+                    ofile.write(' ' * 10 + 'uac_admin=True,\n')
+                if uac_uiaccess:
+                    ofile.write(' ' * 10 + 'uac_uiaccess=True,\n')
+
+        ofile.close() # close temp file
+        ifile.close() # close original file
+        os.remove(ifilepath) # remove original file
+        shutil.move(ofilepath, ifilepath) # move new file
+
+
 
     def prepare_issfile(self):
         #Create temp file

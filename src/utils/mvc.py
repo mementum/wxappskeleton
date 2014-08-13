@@ -29,6 +29,31 @@ import types
 import weakref
 import wx
 
+
+class DynBindSlave(object):
+    def __init__(self, name):
+        self._dynbinding = list()
+        self._dynbinding.append(name)
+
+    def __getattribute__(self, name):
+        _dynbinding = object.__getattribute__(self, '_dynbinding')
+        if name == '_dynbinding':
+            return _dynbinding
+        _dynbinding.append(name)
+        return self
+
+    def __call__(self, func):
+        func._dynbinding = self._dynbinding[:]
+        return func
+
+class MetaDynBind(type):
+    def __getattribute__(cls, name):
+        return DynBindSlave(name)
+
+class DynBind(object):
+    __metaclass__ = MetaDynBind
+
+
 rootdir='.'
 
 def load_modules(cls, subdirs, relpath=None):
@@ -111,11 +136,54 @@ def _reload_modules(klass, reloading=True):
                 if not reloading or newfunc:
                     funcgetter = fgetter(funcname)
                     funcgetter._pubrecv = getattr(func, '_pubrecv', None)
+                    funcgetter._dynbinding = getattr(func, '_dynbinding', None)
                     setattr(klass, funcname, funcgetter)
 
     if reloading:
         for instance in klass._instances:
             instance._subscribe()
+            instance._unbindfuncs()
+            instance._bindfuncs()
+
+def _unbindfuncs(self):
+    # I would need a list of the functions that been bound to unbind them
+    while True:
+        try:
+            widget, event, dynboundmethod = self._dynbindings.pop()
+        except IndexError:
+            pass # no more items in the list
+        else:
+            widget.Unbind(event, handler=dynboundmethod)
+            # self.Unbind(event, source=widget) # does not help for example for wx.EVT_CHAR
+
+def _bindfuncs(self):
+    # wx classes throw exception if getmember is applied to the instance (self)
+    methods = inspect.getmembers(self.__class__, inspect.ismethod)
+    for mname, method in methods:
+        dynbinding = getattr(method, '_dynbinding', None)
+        if dynbinding:
+            eventname, widgetprefix, widgetname = dynbinding
+            event = getattr(wx, eventname, None)
+            if event is None:
+                print 'Method', mname
+                print 'Failed to find eventname', eventname
+                continue
+
+            name = 'm_' + widgetprefix.lower() + widgetname.lower()
+            widget = None
+            for attrname in dir(self):
+                if attrname.lower() == name:
+                    widget = getattr(self, attrname)
+                    break
+
+            if not widget:
+                print 'Method', mname
+                print 'Failed to find widget', name
+                continue
+
+            boundmethod = method.__get__(self, self.__class__)
+            self._dynbindings.append((widget, event, boundmethod))
+            widget.Bind(event, boundmethod)
 
 def _subscribe(self):
     def sgetter(funcname):
@@ -145,12 +213,16 @@ def DynamicClass(moddirs=None):
         cls.view = property(_getview)
 
         cls._subscribe = _subscribe
+        cls._bindfuncs = _bindfuncs
+        cls._unbindfuncs = _unbindfuncs
 
         def _newinit(self, *args, **kwargs):
             cls._instances.add(self)
             self._subs = dict()
             self._subscribe()
             _oldinit(self, *args, **kwargs)
+            self._dynbindings = list()
+            self._bindfuncs()
 
         _oldinit, cls.__init__ = cls.__init__, _newinit
 

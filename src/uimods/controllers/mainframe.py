@@ -18,7 +18,14 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################################################################################
+from utils.mvc import DynBind
 import wx
+
+if True:
+    @DynBind.EVT_BUTTON.Button.ClearSomeText
+    def OnButtonClearSomeText(self, event):
+        event.Skip()
+        self.view.m_textCtrlSomeText.Clear()
 
 if True:
     def OnButtonClickClickMe(self, event):
@@ -53,4 +60,5 @@ if True:
 
 if True:
     def OnButtonClickSomeText(self, event):
+        event.Skip()
         self.sometext = ''

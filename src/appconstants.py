@@ -21,7 +21,7 @@
 
 AppName='appname'
 VendorName=AppName
-AppPublisher='AuthorNamee'
+AppPublisher='AuthorName'
 AppURL='appurl'
 AppExeName='appname.exe'
 AppYear='2014'
@@ -30,3 +30,5 @@ AppExeType='onefile' # 'onedir'
 AppTitle='AppTitle'
 AppVersion='0.0.1'
 AppSingleInstance=True
+AppUACAdmin=False
+AppUACUiAccess=False

@@ -5,6 +5,17 @@
 ; the directory the tool is calling it from
 ; hence the ..\build\xxxx to fall down to the base directory
 
+; Default values
+; #define MyAppName "myappname"
+; #define MyAppVersion "version"
+; #define MyAppPublisher "author"
+; #define MyAppYear "year"
+; #define MyAppURL "url"
+; #define MyAppExeName "appexe"
+; #define MyBuildDir "..\build\inno"
+; #define MyDistDir "..\dist\inno"
+; #define MyAppId "myappid"
+
 #define MyAppName "myappname"
 #define MyAppVersion "version"
 #define MyAppPublisher "author"

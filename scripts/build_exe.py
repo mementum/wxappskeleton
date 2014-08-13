@@ -80,16 +80,18 @@ if __name__ == '__main__':
         subprocess.call(specs_cmd)
         print '**-- End of operations'
 
-        print '-- ADDING/REMOVING Debug Information'
+        print '-- Adding/Removing Debug Flag'
         appinfo.debug_specfile(args.nodebug)
+
+        print '-- Adding/Removing UAC Info if needed'
+        appinfo.uac_specfile()
+
         if args.spec:
             # Do only exit if only "spec generation was requested"
             sys.exit(0)
 
         # Fill in the variable just in case it was empty
         specfile = appinfo.getspecfile()
-
-
 
     print '**-- Beginning of operations'
     print '-- Cleaning up backups/compiled pythons'

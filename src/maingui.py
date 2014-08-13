@@ -111,8 +111,8 @@ class MainFrame ( wx.Frame ):
 		self.m_textCtrlSomeText = wx.TextCtrl( self.m_panel1, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer6.Add( self.m_textCtrlSomeText, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5 )
 		
-		self.m_button9 = wx.Button( self.m_panel1, wx.ID_ANY, u"Clear", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer6.Add( self.m_button9, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		self.m_buttonClearSomeText = wx.Button( self.m_panel1, wx.ID_ANY, u"Clear", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer6.Add( self.m_buttonClearSomeText, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
 		
 		bSizer2.Add( bSizer6, 0, wx.EXPAND, 5 )
@@ -136,7 +136,7 @@ class MainFrame ( wx.Frame ):
 		self.m_button1.Bind( wx.EVT_BUTTON, self.OnButtonClickClickMe )
 		self.m_button3.Bind( wx.EVT_BUTTON, self.OnButtonClickReloadModules )
 		self.m_button6.Bind( wx.EVT_BUTTON, self.OnButtonClickAddElement )
-		self.m_button9.Bind( wx.EVT_BUTTON, self.OnButtonClickSomeText )
+		self.m_buttonClearSomeText.Bind( wx.EVT_BUTTON, self.OnButtonClickSomeText )
 	
 	def __del__( self ):
 		pass
