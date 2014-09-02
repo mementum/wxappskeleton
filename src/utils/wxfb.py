@@ -27,18 +27,9 @@ import types
 import weakref
 import wx
 
+
 from configcls import MutableSequence
-
-def doout(*args):
-    if False:
-        frame = sys._getframe(1)
-        funcname = frame.f_code.co_name
-        if 'self' in frame.f_locals:
-            funcname = frame.f_locals['self'].__class__.__name__ + '.' + funcname
-
-        print funcname, '(', args, ')'
-    return True
-
+from utils.doout import doout
 
 class BindingAny(object):
     defclass = None
@@ -157,7 +148,6 @@ class BindingAny(object):
         # Report to any callback
         # if obj is not None:
         if cb:
-            print 'value is:', value, 'type:', type(value)
             map(lambda callback: callback(value), self.callbacks[objbindname].itervalues())
 
 
@@ -249,11 +239,6 @@ def WidgetBindings(cls):
 class BindingWidget(object):
     wprefix = None
 
-    def makebindname(self, obj):
-        rootbindname = getattr(obj, 'bindname', '')
-        bindname = '/'.join([rootbindname, self.name]).strip('/')
-        return bindname.replace('//', '/')
-
     def __init__(self, name, **kwargs):
         assert doout(name)
         self.name = name
@@ -264,6 +249,11 @@ class BindingWidget(object):
         self.findwidget()
         self.createvars(**kwargs)
         self.dobindings()
+
+    def makebindname(self, obj):
+        rootbindname = getattr(obj, 'bindname', '')
+        bindname = '/'.join([rootbindname, self.name]).strip('/')
+        return bindname.replace('//', '/')
 
     def createvars(self, **kwargs):
         for binding in self.bindings:
@@ -356,7 +346,6 @@ class BindingTextCtrl(BindingWidget):
     def OnText(self, event):
         assert doout(event)
         event.Skip()
-        print 'TEXT CHANGING'
         self._set('value', event.GetString())
 
     @AutoCallback.value
@@ -456,7 +445,6 @@ class BindingComboBox(BindingWidget):
         self._set('selection', self.widget.GetSelection())
         return retval
 
-
 class BindingFilePicker(BindingWidget):
     wprefix = 'filePicker'
     bindings = (('path', BindingString),)
@@ -494,3 +482,75 @@ class BindingDirPicker(BindingWidget):
         # Alternative the BindingString can be marked as read-only (need to develop)
         # and only settable via a direct call to __set__
         self.widget.SetPath(path)
+
+
+class WGroup(object):
+
+    def __init__(self, name, status):
+        self.name = name
+        self.status = status
+        self.widgets = list()
+        self.install()
+
+    def install(self):
+        for i in itertools.count(1):
+            frame = sys._getframe(i)
+            owner = frame.f_locals['self']
+            if not isinstance(owner, self.__class__):
+                self.owner = owner
+                setattr(self.owner, self.name, self)
+                return
+
+        assert False, 'BindingWidget::install SHOULD never fail but it FAILED!'
+
+    def __lshift__(self, widget):
+        self.findwidget(widget)
+        return self
+
+    def enable(self, status=True):
+        self.status = status
+        for wwidget, widget in self.widgets:
+            if wwidget.wprefix in ['tool',]:
+                tb = widget.GetToolBar()
+                tb.EnableTool(widget.GetId(), self.status)
+            else:
+                widget.Enable(self.status)
+        self.owner.Refresh()
+
+    def disable(self):
+        self.enable(status=False)
+
+    def reverse(self):
+        self.enable(status=not self.status)
+
+    def findwidget(self, wwidget):
+        wnamelow = wwidget.name.lower()
+        for attr in dir(self.owner):
+            if attr.lower() == wnamelow:
+                widget = getattr(self.owner, attr, None)
+                self.widgets.append((wwidget, widget))
+                if wwidget.wprefix in ['tool',]:
+                    tb = widget.GetToolBar()
+                    tb.EnableTool(widget.GetId(), self.status)
+                else:
+                    widget.Enable(self.status)
+
+                return
+
+        assert 'Failed to acquire widget - ' + widget.name
+
+class WidgetGeneric(object):
+    def __init__(self, name):
+        self.name = 'm_' + self.wprefix + name
+
+class WButton(WidgetGeneric):
+    wprefix = 'button'
+
+class WTool(WidgetGeneric):
+    wprefix = 'tool'
+
+class WMenuItem(WidgetGeneric):
+    wprefix = 'menuItem'
+
+class WCheckBox(WidgetGeneric):
+    wprefix = 'checkBox'

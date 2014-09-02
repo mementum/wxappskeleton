@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8; py-indent-offset:4 -*-
 ################################################################################
 # 
 #  Copyright (C) 2014 Daniel Rodriguez
@@ -18,8 +16,20 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################################################################################
-import fnmatch, glob, imp, os, os.path, shutil, sys, tempfile, uuid
-#
+import datetime
+import filecmp
+import fnmatch
+import glob
+import imp
+import os
+import os.path
+import py_compile
+import shutil
+import sys
+import tempfile
+import uuid
+import zipfile
+
 # Line buffering is broken in Win32 platforms
 # Running under cygwin/mingw32 this is needed to see a line
 # show up when the print statement is issued
@@ -38,19 +48,35 @@ if sys.platform == 'win32':
 ##################################################
 # CONFIGURABLE VALUES
 ##################################################
-copy_items = {
-    # diralias, [item_list]
-    'base': ['README.md', 'LICENSE'],
-    'src': [],
+appinfomodname = 'appconstants'
+
+appdefaults = {
+    'AppName': 'AppName',
+    'VendorName': 'VendorName',
+    'AppId': 'AppId',
+    'AppPublisher': 'AppPublisher',
+    'AppURL': 'http://appname.com/',
+    'AppExeName': 'AppName',
+    'AppYear': str(datetime.datetime.now().year),
+    'AppExeType': 'onedir', # 'onedir' or 'onefile'
+    'AppTitle': 'AppName',
+    'AppVersion': '0.0.1',
+    'AppSingleInstance': True,
+    'AppUACAdmin': False,
+    'AppUACUiAccess': False,
+    'AppUACManifest': False,
+    'AppConsole': False,
+    'AppPyOptimize': False,
+    'copy_datas': dict(),
+    'toc_datas': dict(),
 }
 
 inno_replace = ['AppName', 'AppVersion', 'AppPublisher', 'AppYear', 'AppURL', 'AppExeName', 'AppId']
-inno_appid = ['AppId',]
 inno_dirs = {'BuildDir': 'setup_build', 'DistDir': 'setup_dist'}
 
-clean_patterns = ['*~', '*.bak', '*.pyc', '*.pyo',]
-
-appinfomodname = 'appconstants'
+clean_patterns = ['*~', '*.bak',]
+pyc_patterns = ['*.pyc', '*.pyo',]
+compile_patterns = ['*.py',]
 
 appdirs = [
     # dirname, basedir, dir relative path
@@ -71,6 +97,10 @@ appdirs = [
     ('setup', 'binaries', 'setup'),
     ('setup_build', 'setup', 'build'),
     ('setup_dist', 'setup', 'dist'),
+
+    # Zipped Generation/Distribution Directories
+    ('zip', 'binaries', 'zip'),
+    ('zip_dist', 'zip', 'zip_dist'),
 ]
 
 appreldirs = [
@@ -84,29 +114,29 @@ appreldirs = [
 ##################################################
 class AppInfo(object):
 
-    def __init__(self):
-        self.init_dirs()
-        self.init_module()
+    def __init__(self, initdir=None):
+        if not initdir:
+            scriptname = sys.executable if getattr(sys, 'frozen', False) else sys.argv[0]
+            initdir = os.path.dirname(scriptname)
 
-    def init_dirs(self):
+        self.init_dirs(initdir)
+        self.init_appinfomod()
+
+    def init_dirs(self, initdir):
         self.dirs = dict()
         self.reldirs = dict()
 
-        if getattr(sys, 'frozen', False):
-            self.dirs['app'] = os.path.dirname(sys.executable)
-        elif __file__:
-            self.dirs['app'] = os.path.dirname(sys.argv[0])
-
+        self.dirs['app'] = initdir
         for appdir in appdirs:
             dirname, basedir, dirext = appdir
-            self.dirs[dirname] = os.path.join(self.dirs[basedir], dirext)
+            self.dirs[dirname] = os.path.normpath(os.path.join(self.dirs[basedir], dirext))
 
         for appreldir in appreldirs:
             dirname, basedir, dirext = appreldir
             dirrel = self.dirs[dirext]
-            self.reldirs[dirname] = os.path.relpath(self.dirs[basedir], dirrel)
+            self.reldirs[dirname] = os.path.normpath(os.path.relpath(self.dirs[basedir], dirrel))
 
-    def init_module(self):
+    def init_appinfomod(self):
         try:
             foundmodule = imp.find_module(appinfomodname, [self.dirs['src'],])
         except Exception, e:
@@ -117,22 +147,70 @@ class AppInfo(object):
         except Exception, e:
             raise e
 
-    def getappinfo(self, varname, defvalue=None, case=True):
-        if case:
-            return getattr(self.appinfomod, varname, defvalue)
+    def getreldir(self, base, rel):
+        return os.path.join(base, rel)
 
-        lowvarname = varname.lower()
+    def getdir(self, name):
+        return self.dirs[name]
+
+    def get(self, varname):
+        varnamelow = varname.lower()
         for attrname in dir(self.appinfomod):
-            if lowvarname == attrname.lower():
-                return getattr(self.appinfomod, attrname, defvalue)
+            if varnamelow == attrname.lower():
+                return getattr(self.appinfomod, attrname)
 
         # Not found -> return default value
-        return defvalue
+        return appdefaults[varnamelow]
 
+
+    def validappid(self):
+        try:
+            valid_uuid = uuid.UUID(self.get('AppId'), version=4)
+        except ValueError:
+            value = uuid.uuid4()
+            return False, value
+
+        return True, None
+
+    def getappname(self):
+        return self.get('AppName')
+
+    def getappexename(self):
+        appexename = self.get('AppExeName')
+        if sys.platform == 'win32':
+            if not appexename.endswith('.exe'):
+                appexename += '.exe'
+        else:
+            if appexename.endswith('.exe'):
+                appexename = appexename[:-4]
+        return appexename
+
+    def getappconsole(self):
+        return self.get('AppConsole')
+
+    def getappscript(self):
+        srcdir = self.dirs['src']
+        appscript = os.path.normpath(os.path.join(srcdir, 'main.py'))
+        if not self.get('AppConsole'):
+            appscript += 'w'
+        return appscript
+
+    def getapponedir(self):
+        return self.get('AppExeType') == 'onedir'
+
+    def getapppyoptimize(self):
+        if self.get('AppPyOptimize'):
+            return [('O','','OPTION')]
+        return []
+
+    def getuacadmin(self, exe_kwargs):
+        if self.get('AppUACManifest'):
+            exe_kwargs['uac_admin'] = self.get('AppUACAdmin')
+            exe_kwargs['uac_uiaccess'] = self.get('AppUACUiAccess')
 
     def getfilepath(self, dirname, appvar, ext, optional=None):
         filedir = self.dirs[dirname]
-        filename = self.getappinfo(appvar) + '.' + ext
+        filename = self.get(appvar) + '.' + ext
         filepath = os.path.join(filedir, filename)
         if os.path.isfile(filepath):
             return glob.glob(filepath)[0]
@@ -146,18 +224,57 @@ class AppInfo(object):
     def getspecfile(self):
         return self.getfilepath('script', 'AppName', 'spec', 'pyinstaller')
 
+    def getpyfile(self):
+        return self.getfilepath('src', 'AppName', 'pyw', 'main')
+
     def getpywfile(self):
         return self.getfilepath('src', 'AppName', 'pyw', 'main')
 
     def getissfile(self):
         return self.getfilepath('script', 'AppName', 'iss', 'innosetup')
 
-    def clean_srcdir(self):
+    def clean_srcdir_backups(self):
+        clean_dir = self.dirs['src']
+        for root, dirs, files in os.walk(clean_dir):
+            for pyc_pattern in pyc_patterns:
+                for filename in fnmatch.filter(files, pyc_pattern):
+                    os.remove(os.path.join(root, filename))
+
+    def clean_srcdir_pyc(self):
         clean_dir = self.dirs['src']
         for root, dirs, files in os.walk(clean_dir):
             for clean_pattern in clean_patterns:
                 for filename in fnmatch.filter(files, clean_pattern):
                     os.remove(os.path.join(root, filename))
+
+    def compile_srcdir(self):
+        compile_dir = self.dirs['src']
+        for root, dirs, files in os.walk(compile_dir):
+            for compile_pattern in compile_patterns:
+                for filename in fnmatch.filter(files, compile_pattern):
+                    py_compile.compile(file=os.path.join(root, filename), doraise=True)
+
+    def zip_exe_dist(self):
+        dstdir = self.dirs['zip_dist']
+        srcdir = self.dirs['exe_dist']
+        if self.getapponedir():
+            srcdir = os.path.normpath(os.path.join(srcdir, self.getappname()))
+
+        zipprefix = self.getappname() + '-' + self.get('Appversion')
+        dstzipname = zipprefix + '.zip'
+
+        dstzip = zipfile.ZipFile(os.path.join(dstdir, dstzipname), mode='w')
+
+        for root, dirs, files in os.walk(srcdir):
+            for f in files:
+                arcname = zipprefix + '/' + f
+                dstzip.write(os.path.normpath(os.path.join(root, f)), arcname=arcname)
+
+        # Add inifile to make it portable
+        arcname = zipprefix + '/' + self.getappname() + '.ini'
+        dstzip.writestr(arcname, '')
+
+        dstzip.close()
 
     def check_dir_build(self):
         return os.path.isdir(self.dirs['build'])
@@ -168,66 +285,18 @@ class AppInfo(object):
             shutil.rmtree(dirpath)
         os.mkdir(dirpath)
 
-    def make_dirs_exe(self):
-        self.make_del_dir('binaries')
-        self.make_del_dir('exe')
-        self.make_del_dir('exe_build')
-        self.make_del_dir('exe_dist')
+    def make_dirs_zip(self):
+        map(self.make_del_dir, ['zip', 'zip_dist',])
 
-    def check_dirs_exe(self):
+    def make_dirs_exe(self):
+        map(self.make_del_dir, ['binaries', 'exe', 'exe_build', 'exe_dist'])
+
+    def check_dirs_exe_dist(self):
         distdir = self.dirs['exe_dist']
         return os.path.isdir(distdir) and len(os.listdir(distdir))
 
     def make_dirs_setup(self):
-        self.make_del_dir('setup')
-        self.make_del_dir('setup_build')
-        self.make_del_dir('setup_dist')
-
-    def debug_specfile(self, nodebug):
-        #Create temp file
-        ofilehandle, ofilepath = tempfile.mkstemp() # open temporary file
-        ofile = os.fdopen(ofilehandle, 'w')  # wrap fhandle in "file object"
-
-        ifilepath = self.getspecfile()
-        ifile = open(ifilepath) # open original file
-        for line in ifile:
-            if 'a.scripts' in line:
-                line = '          a.scripts'
-                if nodebug:
-                    line += " + [('O','','OPTION')]"
-                line += ',\n'
-
-            ofile.write(line)
-
-        ofile.close() # close temp file
-        ifile.close() # close original file
-        os.remove(ifilepath) # remove original file
-        shutil.move(ofilepath, ifilepath) # move new file
-
-    def uac_specfile(self):
-        #Create temp file
-        uac_admin = self.getappinfo('AppUACAdmin', defvalue=False, case=False)
-        uac_uiaccess = self.getappinfo('AppUACUiAccess', defvalue=False, case=False)
-        ofilehandle, ofilepath = tempfile.mkstemp() # open temporary file
-        ofile = os.fdopen(ofilehandle, 'w')  # wrap fhandle in "file object"
-
-        ifilepath = self.getspecfile()
-        ifile = open(ifilepath) # open original file
-        for line in ifile:
-
-            ofile.write(line)
-            if 'name=' in line:
-                if uac_admin:
-                    ofile.write(' ' * 10 + 'uac_admin=True,\n')
-                if uac_uiaccess:
-                    ofile.write(' ' * 10 + 'uac_uiaccess=True,\n')
-
-        ofile.close() # close temp file
-        ifile.close() # close original file
-        os.remove(ifilepath) # remove original file
-        shutil.move(ofilepath, ifilepath) # move new file
-
-
+        map(self.make_del_dir, ['setup', 'setup_build', 'setup_dist'])
 
     def prepare_issfile(self):
         #Create temp file
@@ -242,8 +311,13 @@ class AppInfo(object):
 
         ofile.close() # close temp file
         ifile.close() # close original file
-        os.remove(ifilepath) # remove original file
-        shutil.move(ofilepath, ifilepath) # move new file
+
+        equal = filecmp.cmp(ifilepath, ofilepath, shallow=False)
+        if not equal:
+            os.remove(ifilepath) # remove original file
+            shutil.move(ofilepath, ifilepath) # move new file
+        else:
+            os.remove(ofilepath) # remove temp file
 
     def replace_lines(self, line):
         if line.startswith('#define'):
@@ -258,45 +332,74 @@ class AppInfo(object):
             value = defvalue.strip('"')
 
             if defkey in inno_replace:
-                if defkey == 'AppId':
-                    # try to validate a uuid and if failed - generate one
-                    # unless manually removed, it will only be done once
-                    try:
-                        valid_uuid = uuid.UUID(value, version=4)
-                    except ValueError:
-                        value = uuid.uuid4()
-                else:
-                    value = self.getappinfo(defkey)
+                value = self.get(defkey)
             elif defkey in inno_dirs:
                 dirname = inno_dirs[defkey]
                 value = self.reldirs[dirname]
+                if dirname == 'setup_build' and self.getapponedir():
+                    value = os.path.join(value, self.getappname())
             
             line = ' '.join([define, defname, '"%s"' % value]) + '\n'
 
         return line
 
+    def copy_datas(self):
+        basesrc = self.dirs['base']
+        basedst = self.dirs['exe_dist']
+
+        if self.getapponedir():
+            basedst = os.path.normpath(os.path.join(basedst, self.getappname()))
+
+        for reldstdir, items in self.get('copy_datas').iteritems():
+            dstdir = os.path.normpath(os.path.join(basedst, reldstdir))
+            for item in items:
+                srcitems = glob.glob(os.path.normpath(os.path.join(basesrc, item)))
+                for srcitem in srcitems:
+                    if os.path.isdir(srcitem):
+                        shutil.copytree(srcitem, dstdir)
+                    else:
+                        shutil.copy2(srcitem, dstdir)
+
+    def toc_datas(self, tree_class):
+        basesrc = self.dirs['base']
+        tocs = list()
+
+        for data in ['toc_datas', 'copy_datas']:
+            for reldstdir, items in self.get(data).iteritems():
+                dstdir = os.path.normpath(reldstdir)
+                for item in items:
+                    fullitem = os.path.normpath(os.path.join(basesrc, item))
+
+                    if os.path.isdir(fullitem):
+                        tocs += tree_class(fullitem, prefix=dstdir)
+                        continue
+
+                    if os.path.isfile(fullitem):
+                        dstname = os.path.join(dstdir, os.path.basename(fullitem))
+                        tocs += [(dstname, fullitem, 'DATA'),]
+                        continue
+
+                    # Asume a glob patten was passed
+                    for srcitem in glob.glob(fullitem):
+                        if os.path.isdir(srcitem):
+                            tocs += tree_class(srcitem, prefix=dstdir)
+                        else: # isfile
+                            dstname = os.path.join(dstdir, os.path.basename(srcitem))
+                            tocs += [(dstname, srcitem, 'DATA'),]
+
+        return tocs
+
     def copy_exedist_to_setupbuild(self):
         src = self.dirs['exe_dist']
         dst = self.dirs['setup_build']
 
+        if self.getapponedir():
+            dst = os.path.join(dst, self.getappname())
+
         src_files_dirs = glob.glob(os.path.join(src, '*'))
 
         copy_files = lambda x: shutil.copy(x, dst)
-        src_files = filter(os.path.isfile, src_files_dirs)
-        map(copy_files, src_files)
+        map(copy_files, filter(os.path.isfile, src_files_dirs))
 
         copy_dirs = lambda x: shutil.copytree(x, dst)
-        src_dirs = filter(os.path.isdir, src_files_dirs)
-        map(copy_files, src_dirs)
-
-    def copy_items_to_setupbuild(self):
-        for dirname, items in copy_items.iteritems():
-            for item in items:
-                itempath = self.dirs[dirname]
-                srcpath = os.path.join(itempath, item)
-                dstpath = os.path.join(self.dirs['setup_build'], item)
-
-                if os.path.isfile(srcpath):
-                    shutil.copy(srcpath, dstpath)
-                else:
-                    shutil.copytree(srcpath, dstpath)
+        map(copy_dirs, filter(os.path.isdir, src_files_dirs))

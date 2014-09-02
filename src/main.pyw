@@ -18,11 +18,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################################################################################
-import wx
+import utils.flushfile
 
 import appconstants
 import uimods.mainframe as mainframe
-import utils.flushfile
+import utils.admin
+import utils.artprovider
+import sys
+import wx
 
 class MainApp(wx.App):
     def OnInit(self):
@@ -31,21 +34,42 @@ class MainApp(wx.App):
             self.instancename = '%s-%s' % (appconstants.AppName, wx.GetUserId())
             self.instance = wx.SingleInstanceChecker(self.instancename)
             if self.instance.IsAnotherRunning():
-                wx.MessageBox("Another instance is already running", "ERROR")
+                wx.MessageBox("Another instance is already running", "Error")
                 return False
+
+        # Initialize and install an ArtProvider to fetch images
+        artprovider = utils.artprovider.MyProvider()
+        wx.ArtProvider.Push(artprovider)
 
         # Set App/Vendor Names for Config
         self.SetAppName(appconstants.AppName)
         self.SetVendorName(appconstants.VendorName)
 
         # Get/Create a Global Config Object
-        config = wx.ConfigBase.Get()
+        # Check inifile presence
+        inipath = appconstants.getapppath(appconstants.AppName + '.ini', abspath=True)
+        try:
+            f = open(inipath, 'rb')
+        except IOError:
+            # let the platform decide what and where
+            config = wx.ConfigBase.Get()
+        else:
+            close(f)
+            # portable
+            config = wx.FileConfig(appName=appconstants.AppName,
+                                   vendorName=appconstants.VendorName,
+                                   localFilename=inipath,
+                                   # globalFilename='',
+                                   style=wx.CONFIG_USE_LOCAL_FILE)
+            wx.ConfigBase.Set(config)
+
         config.SetRecordDefaults(True)
 
         # Send Logging to StdError
         wx.Log_SetActiveTarget(wx.LogStderr())
         # wx.Log_SetActiveTarget(wx.LogBuffer())
 
+        # Create the frame
         self.view = mainframe.MainFrame(parent=None)
         title = appconstants.AppTitle + ' - ' + appconstants.AppVersion
         self.view.SetTitle(title)
@@ -53,10 +77,19 @@ class MainApp(wx.App):
         # Set the top window - no longer needed in recent wxPython versions
         # self.SetTopWindow(self.view)
         self.view.Show(True)
+        self.view.Raise()
 
         return True
 
 if __name__ == '__main__':
+    # Admin Check
+    retval, errmsg = utils.admin.CheckAdminRun()
+    if not retval:
+        print 'This application needs Administrator permissions to run'
+        print
+        print 'The following error happened:', errmsg
+        sys.exit(1)
+
     # Run App avoiding redirection of errors to popup
     app = MainApp(redirect=False)
     app.MainLoop()

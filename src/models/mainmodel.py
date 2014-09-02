@@ -20,7 +20,7 @@
 ################################################################################
 from utils.mvc import DynamicClass, PubSend
 
-@DynamicClass(moddirs=['hola'])
+@DynamicClass(moddirs=['modules'])
 class MainModel(object):
     MOTD = [
         # MOTD 1
@@ -44,3 +44,11 @@ class MainModel(object):
     @PubSend('model.next_motd')
     def GetNextMOTD(self):
         return self.Hola()
+
+    def Hola(self):
+        motd = self.MOTD[self.next_motd]
+        self.next_motd += 1
+        if self.next_motd == len(self.MOTD):
+            self.next_motd = 0
+
+        return motd

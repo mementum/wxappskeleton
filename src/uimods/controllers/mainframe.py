@@ -18,38 +18,38 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################################################################################
+from uimods.aboutdialog import AboutDialog
 from utils.mvc import DynBind
 import wx
 
 if True:
-    @DynBind.EVT_BUTTON.Button.ClearSomeText
-    def OnButtonClearSomeText(self, event):
-        event.Skip()
-        self.view.m_textCtrlSomeText.Clear()
-
-if True:
+    @DynBind.EVT_BUTTON.Button.ClickMe
     def OnButtonClickClickMe(self, event):
         event.Skip()
         self.samestatus.value = not self.samestatus.value
         self.view.ClickedMe()
 
 if True:
+    @DynBind.EVT_BUTTON.Button.GetMOTD
     def OnButtonClickGetMOTD(self, event):
         event.Skip()
         self.model.GetNextMOTD()
 
 if True:
+    @DynBind.EVT_BUTTON.Button.ReloadModules
     def OnButtonClickReloadModules(self, event):
         event.Skip()
         self.__class__._reload_modules()
 
 
 if True:
+    @DynBind.EVT_CHECKBOX.CheckBox.SameStatus
     def OnCheckBoxSameStatus(self, event):
         event.Skip()
         # self.samestatus = self.m_checkBoxSameStatus.GetValue()
 
 if True:
+    @DynBind.EVT_BUTTON.Button.AddElement
     def OnButtonClickAddElement(self, event):
         event.Skip()
         dlg = wx.TextEntryDialog(parent=self, message='Enter text', caption='New Entry', defaultValue='')
@@ -59,6 +59,17 @@ if True:
             self.test.items.append(dlg.GetValue())
 
 if True:
-    def OnButtonClickSomeText(self, event):
+    @DynBind.EVT_BUTTON.Button.ClearSomeText
+    def OnButtonClickClearSomeText(self, event):
         event.Skip()
         self.sometext = ''
+
+if True:
+    @DynBind.EVT_BUTTON.Button.AboutDialog
+    @DynBind.EVT_TOOL.Tool.AboutDialog
+    @DynBind.EVT_MENU.MenuItem.AboutDialog
+    def OnEventAboutDialog(self, event):
+        event.Skip()
+        dialog = AboutDialog(self)
+        dialog.ShowModal()
+

@@ -19,14 +19,15 @@
 #
 ################################################################################
 import argparse
-import subprocess, sys
+import logging
+import subprocess
+import sys
+
+logging.basicConfig(
+    format='%(levelname)s: %(message)s',
+    level=logging.INFO)
 
 import build_utils
-
-##################################################
-# APPLICATION INFORMATION
-##################################################
-appconstants = 'appconstants'
 
 ##################################################
 # CONSTANTS FOR SPEC GENERATION
@@ -39,73 +40,65 @@ appconstants = 'appconstants'
 specs_cmd = ['pyi-makespec', '--noupx',]
 
 # Base command for executable generation
-pyinst_cmd = ['pyinstaller', '--noconfirm']
+# pyinst_cmd = ['pyinstaller', '--noconfirm']
+pyinst_cmd = ['pyi-build', '--noconfirm']
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Prepare spec file and generate executable')
-    parser.add_argument('-s', '--spec', action='store_true', help='do only prepare the spec file')
-    parser.add_argument('-n', '--nodebug', action='store_false', default=True, help='do not optimize python (thus removing debugging)')
+    parser.add_argument('--clean', action='store_true', help='tell pyinstaller to clean up the build cache')
     args = parser.parse_args()
 
-    print '** Building Application Information Object'
-    appinfo = build_utils.AppInfo()
-    print '-- Trying to locate specfile'
+    logging.info('Creating Application Information Object')
+    try:
+        appinfo = build_utils.AppInfo()
+    except Exception, e:
+        logging.error('Failed to initialize AppInfo')
+        logging.error(str(e))
+        sys.exit(1)
+
+    logging.info('Getting Spec file')
     specfile = appinfo.getspecfile()
+    if not specfile:
+        logging.error('Specfile was not found. Check for presence')
+        sys.exit(1)
 
-    if args.spec or not specfile:
-        if args.spec:
-            if specfile:
-                print '-- Current Specfile will be overwritten'
-            else:
-                print '-- New specfile will be created'
-        else:
-            print '-- No specfile found - creating one for executable generation'
+    logging.info('Begin operations')
+    logging.info('Cleaning up backups')
+    try:
+        appinfo.clean_srcdir_backups()
+    except OSError, e:
+        logging.error('Failed to remove all backups')
+        logging.error(str(e))
+        sys.exit(1)
 
-        print '-- Building spec generation command'
-        specs_cmd.append('--specpath=' + appinfo.dirs['script'])
-        specs_cmd.append('--additional-hooks-dir=' + appinfo.dirs['hooks'])
+    logging.info('Cleaning up compiled pythons')
+    try:
+        appinfo.clean_srcdir_pyc()
+    except OSError, e:
+        logging.error('Failed to remove all compiled python files')
+        logging.error(str(e))
+        sys.exit(1)
 
-        specs_cmd.append('--name=' + appinfo.getappinfo('AppName'))
+    logging.info('Making (deleting if needed) previous executable generation directories')
+    try:
+        appinfo.make_dirs_exe()
+    except OSError, e:
+        logging.error('Directory operation failed')
+        logging.error(str(e))
+        sys.exit(1)
 
-        specs_cmd.append('--' + appinfo.getappinfo('AppExeType', 'onefile'))
-        specs_cmd.append('--' + appinfo.getappinfo('AppUIType', 'windowed'))
-
-        pywfile = appinfo.getpywfile()
-        if not pywfile:
-            print '-- ERROR: no pyw file found to generate the spec'
-            sys.exit(1)
-        specs_cmd.append(pywfile)
-
-        print '-- Calling the following command:', ' '.join(specs_cmd)
-        subprocess.call(specs_cmd)
-        print '**-- End of operations'
-
-        print '-- Adding/Removing Debug Flag'
-        appinfo.debug_specfile(args.nodebug)
-
-        print '-- Adding/Removing UAC Info if needed'
-        appinfo.uac_specfile()
-
-        if args.spec:
-            # Do only exit if only "spec generation was requested"
-            sys.exit(0)
-
-        # Fill in the variable just in case it was empty
-        specfile = appinfo.getspecfile()
-
-    print '**-- Beginning of operations'
-    print '-- Cleaning up backups/compiled pythons'
-    appinfo.clean_srcdir()
-
-    print '-- Making (deleting if needed) previous executable generation directories'
-    appinfo.make_dirs_exe()
-
+    if args.clean:
+        logging.info('Adding --clean to command line arguments')
+        pyinst_cmd.append('--clean')
+    
+    logging.info('Adding work directory to command line arguments')
     pyinst_cmd.append('--workpath=' + appinfo.dirs['exe_build'])
+    logging.info('Adding distribution directory to command line arguments')
     pyinst_cmd.append('--distpath=' + appinfo.dirs['exe_dist'])
-
-    print '-- Adding specfile to command line arguments'
+    logging.info('Adding specfile to command line arguments')
     pyinst_cmd.append(specfile)
 
-    print '-- Generating executable with command: %s' % ' '.join(pyinst_cmd)
+    logging.info('Generating executable with command: %s' % ' '.join(pyinst_cmd))
     subprocess.call(pyinst_cmd)
-    print '**-- End of operations'
+
+    logging.info('End of operations')

@@ -6,7 +6,7 @@
 ; hence the ..\build\xxxx to fall down to the base directory
 
 ; Default values
-; #define MyAppName "myappname"
+; #define MyAppName "appname"
 ; #define MyAppVersion "version"
 ; #define MyAppPublisher "author"
 ; #define MyAppYear "year"
@@ -16,7 +16,7 @@
 ; #define MyDistDir "..\dist\inno"
 ; #define MyAppId "myappid"
 
-#define MyAppName "myappname"
+#define MyAppName "appname"
 #define MyAppVersion "version"
 #define MyAppPublisher "author"
 #define MyAppYear "year"

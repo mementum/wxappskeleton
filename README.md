@@ -1,5 +1,5 @@
-wxappsskeleton
-==============
+wxappskeleton
+=============
 
 Skeleton wxPython application including executable generation
 with pyinstaller and setup generation with innosetup
