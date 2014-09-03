@@ -23,10 +23,12 @@ import os
 import os.path
 import pywintypes
 import time
-import win32con
-import win32com.shell.shell
-import win32com.shell.shellcon
 import sys
+
+if sys.platform == 'win32':
+    import win32con
+    import win32com.shell.shell
+    import win32com.shell.shellcon
 
 CheckRunAdminError = '''
 Error, This application should be running as Administrator via
@@ -99,7 +101,7 @@ def RunAsAdminWin32():
             lpFile=sys.executable,
             lpParameters=params)
     except pywintypes.error, e:
-        return False, str(e)
+        return False, e[2]
 
     # If ShellExecuteEx was ok ... this will never be reached
     # return True, None

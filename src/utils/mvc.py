@@ -28,61 +28,35 @@ import wx
 
 from utils.doout import doout
 
-if False:
-    class DynBindSlave(object):
-        def __init__(self, name):
-            self._dynbinding = list()
-            self._dynbinding.append(name)
+class DynBindSlave(object):
+    def __init__(self, name):
+        self._dynbinding = list()
+        self._dynbinding.append(name)
 
-        def __getattribute__(self, name):
-            _dynbinding = object.__getattribute__(self, '_dynbinding')
-            if name == '_dynbinding':
-                return _dynbinding
-            _dynbinding.append(name)
-            return self
+    def __getattribute__(self, name):
+        _dynbinding = object.__getattribute__(self, '_dynbinding')
+        if name == '_dynbinding':
+            return _dynbinding
+        _dynbinding.append(name)
+        return self
 
-        def __call__(self, func):
-            func._dynbinding = [self._dynbinding[:],]
-            return func
+    def __call__(self, func):
+        curbinding = getattr(func, '_dynbinding', None)
+        if curbinding is None:
+            func._dynbinding = list()
 
-    class MetaDynBind(type):
-        def __getattribute__(cls, name):
-            return DynBindSlave(name)
+        func._dynbinding.append(self._dynbinding[:])
+        return func
 
-    class DynBind(object):
-        __metaclass__ = MetaDynBind
+class MetaDynBind(type):
+    def __getattribute__(cls, name):
+        return DynBindSlave(name)
 
-else:
-    class DynBindSlave(object):
-        def __init__(self, name):
-            self._dynbinding = list()
-            self._dynbinding.append(name)
-
-        def __getattribute__(self, name):
-            _dynbinding = object.__getattribute__(self, '_dynbinding')
-            if name == '_dynbinding':
-                return _dynbinding
-            _dynbinding.append(name)
-            return self
-
-        def __call__(self, func):
-            curbinding = getattr(func, '_dynbinding', None)
-            if curbinding is None:
-                func._dynbinding = list()
-
-            func._dynbinding.append(self._dynbinding[:])
-            return func
-
-    class MetaDynBind(type):
-        def __getattribute__(cls, name):
-            return DynBindSlave(name)
-
-    class DynBind(object):
-        __metaclass__ = MetaDynBind
+class DynBind(object):
+    __metaclass__ = MetaDynBind
 
 
 def _reload_modules(cls, reloading=True):
-
     assert doout('called with', cls, 'reloading:', reloading)
     results = list()
     for modname in cls._moddirs:
@@ -179,15 +153,14 @@ def _unbindfuncs(self):
         try:
             widget, event, dynboundmethod = self._dynbindings.pop()
         except IndexError:
-            pass # no more items in the list
+            break # no more items in the list
         else:
             if event in [wx.EVT_MENU, wx.EVT_TOOL]:
-                self.Unbind(event, handler=dynboundmethod)
-            if event in [wx.SIZE,]:
+                self.Unbind(event, handler=dynboundmethod, id=widget.GetId())
+            elif event in [wx.EVT_SIZE,]:
                 self.Unbind(event, handler=dynboundmethod)
             else:
                 widget.Unbind(event, handler=dynboundmethod)
-                # self.Unbind(event, source=widget) # does not help for example for wx.EVT_CHAR
 
 def _bindfuncs(self):
     # wx classes throw exception if getmember is applied to the instance (self)

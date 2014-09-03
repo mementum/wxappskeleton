@@ -24,18 +24,30 @@ import appconstants
 import uimods.mainframe as mainframe
 import utils.admin
 import utils.artprovider
+import utils.systemmenu
 import sys
 import wx
 
 class MainApp(wx.App):
     def OnInit(self):
+        # Admin Check
+        retval, errmsg = utils.admin.CheckAdminRun()
+        if not retval:
+            wx.MessageBox(
+                'This application needs Administrator permissions to run\n'
+                '\n' 
+                'The following error happened:\n'
+                '\n'
+                '%s' % errmsg, 'Error')
+            sys.exit(1)
+
         # Single Instance Check
         if appconstants.AppSingleInstance:
             self.instancename = '%s-%s' % (appconstants.AppName, wx.GetUserId())
             self.instance = wx.SingleInstanceChecker(self.instancename)
             if self.instance.IsAnotherRunning():
                 wx.MessageBox("Another instance is already running", "Error")
-                return False
+                sys.exit(1)
 
         # Initialize and install an ArtProvider to fetch images
         artprovider = utils.artprovider.MyProvider()
@@ -71,6 +83,11 @@ class MainApp(wx.App):
 
         # Create the frame
         self.view = mainframe.MainFrame(parent=None)
+        if not appconstants.appisfrozen():
+            # Add system menuentry
+            if not utils.systemmenu.AddSystemReloadMenu(self.view):
+                wx.MessageBox('Could not install system menu', 'Error')
+
         title = appconstants.AppTitle + ' - ' + appconstants.AppVersion
         self.view.SetTitle(title)
 
@@ -82,14 +99,6 @@ class MainApp(wx.App):
         return True
 
 if __name__ == '__main__':
-    # Admin Check
-    retval, errmsg = utils.admin.CheckAdminRun()
-    if not retval:
-        print 'This application needs Administrator permissions to run'
-        print
-        print 'The following error happened:', errmsg
-        sys.exit(1)
-
     # Run App avoiding redirection of errors to popup
     app = MainApp(redirect=False)
     app.MainLoop()
