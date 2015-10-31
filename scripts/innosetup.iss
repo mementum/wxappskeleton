@@ -61,11 +61,11 @@ UpdateUninstallLogAppName=false
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; 
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}";
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Files]
-Source: {#MyBuildDir}\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs uninsremovereadonly; 
+Source: {#MyBuildDir}\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs uninsremovereadonly;
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -84,5 +84,5 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 UseRelativePaths=true
 
 [Registry]
-root: HKCU; subkey: Software\{#MyAppName}; valuedata: ""; Flags: UninsDeleteKey; valuetype: none; 
-root: HKCU; subkey: Software\{#MyAppName}\{#MyAppName}; valuedata: ""; Flags: UninsDeleteKey; valuetype: none; 
+root: HKCU; subkey: Software\{#MyAppName}; valuedata: ""; Flags: UninsDeleteKey; valuetype: none;
+root: HKCU; subkey: Software\{#MyAppName}\{#MyAppName}; valuedata: ""; Flags: UninsDeleteKey; valuetype: none;

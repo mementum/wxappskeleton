@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
 #
-# ColumnSorterMixinNextGen based on the original wx.lib.mixins.listctrl.ColumSorterMixin
+# ColumnSorterMixinNextGen based on the original
+#  wx.lib.mixins.listctrl.ColumSorterMixin
 #
 # Original License: wxWindows
 #
@@ -33,29 +34,32 @@ import locale
 import wx
 from wx.lib.mixins.listctrl import ColumnSorterMixin
 
+
 class ColumnSorterMixinNextGen(object):
-    '''
-    Self contained version of ColumnSorterMixin
+    '''Self contained version of ColumnSorterMixin
 
-    As a user you just need to use it in conjunction with ListCtrl to create a child class
-    and call the constructor
+    As a user you just need to use it in conjunction with ListCtrl to create a
+    child class and call the constructor
 
-    In comparison with the original there is no need to keep an itemDataMap or define the
-    GetListCtrl (the latter because it is asumed the Mixin will only be used with a ListCtrl)
+    In comparison with the original there is no need to keep an itemDataMap or
+    define the GetListCtrl (the latter because it is asumed the Mixin will only
+    be used with a ListCtrl)
 
-    I have tried to keep the interface of the ColumSorterMixin as it was. Any error can be
-    assigned to me.
+    I have tried to keep the interface of the ColumSorterMixin as it was. Any
+    error can be assigned to me.
 
-    Additionally I have removed the __ mangling code (may anyone be willing to subclass in the future?)
+    Additionally I have removed the __ mangling code (may anyone be willing to
+    subclass in the future?)
+
     '''
 
     def __init__(self):
-        self.col = -1 # Keeps a reference to the last sorted column
-        self.sortflags = list() # Keeps ascending/descending reference for columns
-        self.sortdata = dict() # Holder for column text for he sort process
+        self.col = -1  # Keeps a reference to the last sorted column
+        self.sortflags = list()  # Keeps asc/desc reference for columns
+        self.sortdata = dict()  # Holder for column text for he sort process
 
-        # Assumption: always mixin with a ListCtrl
-        self.Bind(wx.EVT_LIST_COL_CLICK, self.OnColClick, self) # Bind to column header click
+        # Assumption: always mixin with ListCtrl - Bind to column header click
+        self.Bind(wx.EVT_LIST_COL_CLICK, self.OnColClick, self)
 
         # Replace ListCtrl.InsertColumn with own method and keep a reference
         setattr(self, 'InsertColumnOrig', self.InsertColumn)
@@ -77,18 +81,20 @@ class ColumnSorterMixinNextGen(object):
         self.DoSort(event.GetColumn())  # current column to be sorted
 
     def DoSort(self, column, status=None):
-        '''
-        Separated from event management to allow it to be used internally and externally
+        '''Separated from event management to allow it to be used internally and
+        externally
 
         When called a list of column text is gathered on the fly to use it
         during the sorting process.
 
-        This is key to avoid the user keeping external data sync'ed: the data is already in the
-        control
+        This is key to avoid the user keeping external data sync'ed: the data
+        is already in the control
 
-        Does additional column count control and allows reordering with current state
+        Does additional column count control and allows reordering with current
+        state
 
         The rest from the original
+
         '''
 
         colcount = self.GetColumnCount()
@@ -99,49 +105,54 @@ class ColumnSorterMixinNextGen(object):
         elif column >= colcount:
             column = colcount - 1
 
-        oldcol = self.col # reference to last sorted column
+        oldcol = self.col  # reference to last sorted column
         self.col = col = column
 
         if status is None:
-            self.sortflags[col] = not self.sortflags[col] # invert the last sorting order
+            # invert the last sorting order
+            self.sortflags[col] = not self.sortflags[col]
         else:
             self.sortflags[col] = status
 
-        self.sortdata = dict() # prepare the data holder
+        self.sortdata = dict()  # prepare the data holder
         for index in xrange(0, self.GetItemCount()):
             # loop over all items and gather the ItemData and ColumnText
             itemdata = self.GetItemData(index)
             item = self.GetItem(index, col)
             self.sortdata[itemdata] = item.GetText()
 
-        self.SortItems(self.GetColumnSorter()) # Sort
+        self.SortItems(self.GetColumnSorter())  # Sort
+        macusegeneric = "mac.listctrl.always_use_generic"
         if wx.Platform != "__WXMAC__" or \
-           wx.SystemOptions.GetOptionInt("mac.listctrl.always_use_generic") == 1:
-            # If needed and possible update the images
+           wx.SystemOptions.GetOptionInt(macusegeneric) == 1:
+            # If needed an possible update the images
             self.UpdateImages(oldcol)
-            
-        self.OnSortOrderChanged() # go to the notification callback
+
+        self.OnSortOrderChanged()  # go to the notification callback
 
     def GetColumnSorter(self):
-        """Returns a callable object to be used for comparing column values when sorting."""
+        """Returns a callable object to be used for comparing column values when
+        sorting.
+        """
         return self.ColumnSorter
 
     def GetSecondarySortValues(self, col, key1, key2):
-        """Returns a tuple of 2 values to use for secondary sort values when the
-           items in the selected column match equal.  The default just returns the
-           item data values."""
+        """Returns a tuple of 2 values to use for secondary sort values when the items
+           in the selected column match equal.  The default just returns the
+           item data values.
+        """
         return (key1, key2)
 
     def ColumnSorter(self, key1, key2):
-        '''
-        In comparison with the original we don't need the column, because the
-        data for the specific column has been already gathered and saved along the key (item data)
+        '''In comparison with the original we don't need the column, because the data
+        for the specific column has been already gathered and saved along the
+        key (item data)
         '''
         ascending = self.sortflags[self.col]
         item1 = self.sortdata[key1]
         item2 = self.sortdata[key2]
 
-        #--- Internationalization of string sorting with locale module
+        # --- Internationalization of string sorting with locale module
         if type(item1) == unicode and type(item2) == unicode:
             cmpVal = locale.strcoll(item1, item2)
         elif type(item1) == str or type(item2) == str:
@@ -149,39 +160,40 @@ class ColumnSorterMixinNextGen(object):
         else:
             cmpVal = cmp(item1, item2)
 
-        # If the items are equal then pick something else to make the sort value unique
+        # If the items are equal then pick something else to make the sort
+        # value unique
         if not cmpVal:
-            cmpVal = apply(cmp, self.GetSecondarySortValues(self.col, key1, key2))
+            cmpVal = apply(cmp,
+                           self.GetSecondarySortValues(self.col, key1, key2))
 
         return cmpVal if ascending else -cmpVal
 
-    def InsertColumnMixin(self, col, heading, format=wx.LIST_FORMAT_LEFT, width=-1):
-        '''
-        Replaces ListCtrl InsertColumn to keep the ascending/descending sort flags sync'ed
-        with column insertion
+    def InsertColumnMixin(self, col, heading,
+                          format=wx.LIST_FORMAT_LEFT, width=-1):
+        '''Replaces ListCtrl InsertColumn to keep the ascending/descending sort flags
+        sync'ed with column insertion
 
-        The reason to do this: if put on the right hand side of the "base classes" list
-        a plain InsertColumn method would not be found and Mixins are usually put on the right
-        hand side
+        The reason to do this: if put on the right hand side of the "base
+        classes" list a plain InsertColumn method would not be found and Mixins
+        are usually put on the right hand side
         '''
         index = self.InsertColumnOrig(col, heading, format, width)
         if index != -1:
             # Colum insert: Insert a sorting flag in the returned index
             self.sortflags.insert(index, True)
             if self.col >= index:
-                # Fix the index of the last sorted column because we added to the left
+                # Fix index of last sorted column because we added to the left
                 self.col += 1
 
         return index
 
     def DeleteColumnMixin(self, col):
-        '''
-        Replaces ListCtrl DeleteColumn to keep the ascending/descending sort flags sync'ed
-        with column insertion
+        '''Replaces ListCtrl DeleteColumn to keep the ascending/descending sort flags
+        sync'ed with column insertion
 
-        The reason to do this: if put on the right hand side of the "base classes" list
-        a plain InsertColumn method would not be found and Mixins are usually put on the right
-        hand side
+        The reason to do this: if put on the right hand side of the "base
+        classes" list a plain InsertColumn method would not be found and Mixins
+        are usually put on the right hand side
         '''
         deleted = self.DeleteColumnOrig(col)
         if deleted:
@@ -205,9 +217,8 @@ class ColumnSorterMixinNextGen(object):
         return (self.col, self.sortflags[self.col])
 
     def GetSortImages(self):
-        """
-        Returns a tuple of image list indexesthe indexes in the image list for an image to be put on the column
-        header when sorting in descending order.
+        """Returns a tuple of image list indexesthe indexes in the image list for an
+        image to be put on the column header when sorting in descending order.
         """
         return (-1, -1)  # (decending, ascending) image IDs
 
@@ -220,8 +231,7 @@ class ColumnSorterMixinNextGen(object):
             self.SetColumnImage(self.col, img)
 
     def GetColumnWidths(self):
-        """
-        Returns a list of column widths.  Can be used to help restore the current
+        """Returns a list of column widths.  Can be used to help restore the current
         view later.
         """
         rv = list()
@@ -230,7 +240,8 @@ class ColumnSorterMixinNextGen(object):
         return rv
 
     def SortListItems(self, col=-1, ascending=True):
-        """Sort the list on demand.  Can also be used to set the sort column and order."""
+        """Sort list on demand.  Can also be used to set sort column and order.
+        """
         self.DoSort(col, ascending)
 
     def SortListItemsLastState(self):

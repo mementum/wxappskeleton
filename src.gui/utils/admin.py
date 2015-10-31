@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
 import appconstants
 import os
 import os.path
@@ -25,7 +25,10 @@ import pywintypes
 import time
 import sys
 
-if sys.platform == 'win32':
+if not appconstants.appisfrozen() and sys.platform == 'win32':
+    # PyInstaller 3.0 (2015-10-27) cannot cope win32com.shell.shell
+    # Import the modules below only if app is not frozen and win32
+    # For an already built-in binary ... the manifest must be used
     import win32con
     import win32com.shell.shell
     import win32com.shell.shellcon
@@ -36,6 +39,7 @@ the embedded manifest.xml, but it is not.
 
 The application needs administrator permissions to run.
 '''
+
 
 def CheckAdminRun():
     if not appconstants.AppUACAdmin or UserIsAdmin():
@@ -53,7 +57,9 @@ def CheckAdminRun():
         # we "must" be running as Admin, becasue if not the application
         # would not have started
         # (or else ... a bug in the manifest or embedding process has acted)
-        return False, 'Unknown error. Manifest must request Administrator permissions before launch'
+        return False, ('Unknown error. Manifest must request Administrator'
+                       ' permissions before launch')
+
 
 def UserIsAdmin():
     if sys.platform == 'win32':
@@ -61,16 +67,19 @@ def UserIsAdmin():
 
     return UserIsAdminUnixLike()
 
+
 def UserIsAdminWin32():
     try:
         isadmin = win32com.shell.shell.IsUserAnAdmin()
     except pywintypes.error:
-        isadmin = False # assumption
+        isadmin = False  # assumption
 
     return isadmin
 
+
 def UserIsAdminUnixLike():
     return os.getuid() == 0
+
 
 def RunAsAdmin():
     if UserIsAdmin():
@@ -81,6 +90,7 @@ def RunAsAdmin():
         return RunAsAdminWin32()
     else:
         return RunAsAdminUnixLike()
+
 
 def RunAsAdminWin32():
     # FIXME ... what happens if "frozen"
@@ -108,14 +118,15 @@ def RunAsAdminWin32():
     # In any case exit to avoid a "single instance check" failure
     sys.exit(0)
 
+
 def RunAsAdminUnixLike():
     # FIXME ... what happens if "frozen"
     script = os.path.abspath(sys.argv[0])
 
-    params = [sys.executable,]
+    params = [sys.executable]
     if sys.executable != script:
         params.append(script)
-        # CHECK Seems logic to always extend 
+        # CHECK Seems logic to always extend
         params.extend(sys.argv[1:])
 
     # FIXME ... execute the command directly

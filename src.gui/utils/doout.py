@@ -1,5 +1,7 @@
-################################################################################
-# 
+#!/usr/bin/env python
+# -*- coding: utf-8; py-indent-offset:4 -*-
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -15,20 +17,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
-import appconstants
-import wx
+###############################################################################
+import sys
 
-class MyProvider(wx.ArtProvider):
-    def __init__(self):
-        wx.ArtProvider.__init__(self)
 
-    def CreateBitmap(self, artid, client, size):
-        if not artid.startswith('priv'):
-            return wx.NullBitmap
+def doout(*args):
+    if False:
+        frame = sys._getframe(1)
+        funcname = frame.f_code.co_name
+        if 'self' in frame.f_locals:
+            funcname = \
+                frame.f_locals['self'].__class__.__name__ + '.' + funcname
 
-        artid = artid.split('/')[1:] # Split path and remove 'priv'
-        artid = '/'.join(artid) # rejoin remaining parts
-
-        fpath = appconstants.getdatapath(artid)
-        return wx.Bitmap(fpath, wx.BITMAP_TYPE_ANY)
+        print funcname, '(', args, ')'
+    return True

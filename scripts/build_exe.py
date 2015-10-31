@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
 import argparse
 import logging
 import subprocess
@@ -27,7 +27,8 @@ logging.basicConfig(
     format='%(levelname)s: %(message)s',
     level=logging.INFO)
 
-import build_utils
+if True:  # to avoid PEP-8 complaints
+    import build_utils
 
 ##################################################
 # CONSTANTS FOR SPEC GENERATION
@@ -37,20 +38,33 @@ import build_utils
 
 # Base command for spec generation
 # --noconfirm is not accepted by pyi-makespec
-specs_cmd = ['pyi-makespec', '--noupx',]
+specs_cmd = ['pyi-makespec', '--noupx']
 
 # Base command for executable generation
-# pyinst_cmd = ['pyinstaller', '--noconfirm']
-pyinst_cmd = ['pyi-build', '--noconfirm']
+pyinst_cmd = ['pyinstaller', '--noconfirm']
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Prepare spec file and generate executable')
-    parser.add_argument('--clean', action='store_true', help='tell pyinstaller to clean up the build cache')
+    parser = argparse.ArgumentParser(
+        description='Prepare spec file and generate executable')
+    parser.add_argument('--clean', action='store_true',
+                        help='tell pyinstaller to clean up the build cache')
+
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument('--console', required=False, action='store_true',
+                       help='Build the console application if present')
+
+    group.add_argument('--gui', required=False, action='store_true',
+                       help='Build the gui application if present')
+
     args = parser.parse_args()
+
+    # Decide whether we are building console or gui
+    gui = args.gui or not args.console
 
     logging.info('Creating Application Information Object')
     try:
-        appinfo = build_utils.AppInfo()
+        appinfo = build_utils.AppInfo(gui=gui)
     except Exception, e:
         logging.error('Failed to initialize AppInfo')
         logging.error(str(e))
@@ -79,7 +93,8 @@ if __name__ == '__main__':
         logging.error(str(e))
         sys.exit(1)
 
-    logging.info('Making (deleting if needed) previous executable generation directories')
+    logging.info(('Making (deleting if needed) previous executable'
+                  ' generation directories'))
     try:
         appinfo.make_dirs_exe()
     except OSError, e:
@@ -90,7 +105,7 @@ if __name__ == '__main__':
     if args.clean:
         logging.info('Adding --clean to command line arguments')
         pyinst_cmd.append('--clean')
-    
+
     logging.info('Adding work directory to command line arguments')
     pyinst_cmd.append('--workpath=' + appinfo.dirs['exe_build'])
     logging.info('Adding distribution directory to command line arguments')
@@ -98,7 +113,8 @@ if __name__ == '__main__':
     logging.info('Adding specfile to command line arguments')
     pyinst_cmd.append(specfile)
 
-    logging.info('Generating executable with command: %s' % ' '.join(pyinst_cmd))
+    logging.info('Generating executable with command: %s' %
+                 ' '.join(pyinst_cmd))
     subprocess.call(pyinst_cmd)
 
     logging.info('End of operations')

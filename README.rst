@@ -16,4 +16,3 @@ modify build_utils and change the copy_items dictionary
 Additional variables can be fine tuned in build_utils to
 modifiy directory names, files to be cleaned before generation
 and others
-

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
 ################################################################################
-# 
+#
 # Copyright (C) 2014 Daniel Rodriguez
 #
 # This program is free software: you can redistribute it and/or modify
@@ -35,7 +35,7 @@ class MainApp(wx.App):
         if not retval:
             wx.MessageBox(
                 'This application needs Administrator permissions to run\n'
-                '\n' 
+                '\n'
                 'The following error happened:\n'
                 '\n'
                 '%s' % errmsg, 'Error')
@@ -85,7 +85,7 @@ class MainApp(wx.App):
         self.view = mainframe.MainFrame(parent=None)
         if not appconstants.appisfrozen():
             # Add system menuentry
-            if not utils.systemmenu.AddSystemReloadMenu(self.view):
+            if False and not utils.systemmenu.AddSystemReloadMenu(self.view):
                 wx.MessageBox('Could not install system menu', 'Error')
 
         title = appconstants.AppTitle + ' - ' + appconstants.AppVersion

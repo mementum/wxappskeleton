@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,31 +17,31 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
 import os.path
 import sys
 
-AppName='appname'
-VendorName=AppName
-AppId='AppId'
-AppPublisher='Author'
-AppURL='http://github.com/' + AppPublisher.lower() + '/' + AppName.lower()
-AppExeName=AppName
-AppYear='2014'
-AppExeType='onedir' # 'onedir' or 'onefile'
+AppName = 'appname'
+VendorName = AppName
+AppId = 'AppId'
+AppPublisher = 'Author'
+AppURL = 'http://github.com/' + AppPublisher.lower() + '/' + AppName.lower()
+AppExeName = AppName
+AppYear = '2015'
+AppExeType = 'onedir'  # 'onedir' or 'onefile'
 
-AppTitle=AppName
-AppVersion='0.0.1'
-AppSingleInstance=True
-AppUACAdmin=False
-AppUACUiAccess=False
-AppUACManifest=False
-AppConsole=False
-AppPyOptimize=False
+AppTitle = AppName
+AppVersion = '0.0.1'
+AppSingleInstance = True
+AppUACAdmin = False
+AppUACUiAccess = False
+AppUACManifest = False
+AppConsole = False
+AppPyOptimize = False
 
 # Documents to be displayed in tabs in the About Dialog
 about_datas = [
-    ('README.md', 'appdir'),
+    ('README.rst', 'appdir'),
     ('LICENSE', 'appdir'),
     ('LICENSE-3rd', 'appdir'),
 ]
@@ -49,22 +49,25 @@ about_datas = [
 # Will be copied alongside the executable in onefile mode
 copy_datas = {
     # relative dir from application root, [item_list]
-    '.': ['README.md', 'LICENSE', 'LICENSE-3rd'],
+    '.': ['README.rst', 'LICENSE', 'LICENSE-3rd'],
 }
 
 # Will be added to executable/collect as a TOC
 toc_datas = {
     # relative dir from application root, [item_list]
-    'icons': ['./src/icons',],
+    'icons': ['./src.gui/icons'],
 }
+
 
 def appisfrozen():
     return getattr(sys, 'frozen', False)
 
+
 # Application and Data Directory functions
 # '.' is usually the src/main.pyw directory
 # if "icons" (example) are located one level upwards then use '..'
-DATABASE = '.' 
+DATABASE = '.'
+
 
 def getdatadir(abspath=False):
     if appisfrozen():
@@ -77,12 +80,14 @@ def getdatadir(abspath=False):
         datadir = os.path.abspath(datadir)
     return os.path.normpath(datadir)
 
+
 def getdatapath(path, abspath=False):
     datadir = getdatadir(abspath=abspath)
     datapath = os.path.join(datadir, path)
     return os.path.normpath(datapath)
 
 APPBASE = '..'
+
 
 def getappdir(abspath=False):
     appdir = os.path.dirname(sys.argv[0])
@@ -93,6 +98,7 @@ def getappdir(abspath=False):
     if abspath:
         appdir = os.path.abspath(appdir)
     return os.path.normpath(appdir)
+
 
 def getapppath(path, abspath=False):
     appdir = getappdir(abspath=abspath)

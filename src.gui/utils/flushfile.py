@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,4 +17,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
+import sys
+
+
+class flushfile(object):
+
+    def __init__(self, f):
+        self.f = f
+
+    def write(self, x):
+        self.f.write(x)
+        self.f.flush()
+
+if sys.platform == 'win32':
+    sys.stdout = flushfile(sys.stdout)
+    sys.stderr = flushfile(sys.stderr)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
 import argparse
 import logging
 import sys
@@ -26,10 +26,13 @@ logging.basicConfig(
     format='%(levelname)s: %(message)s',
     level=logging.INFO)
 
-import build_utils
+if True:  # to avoid PEP-8 complains
+    import build_utils
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Prepare spec file and generate executable')
+    parser = argparse.ArgumentParser(
+        description='Prepare spec file and generate executable')
     args = parser.parse_args()
 
     logging.info('Creating Application Information Object')
@@ -41,7 +44,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     logging.info('Begin operations')
-    logging.info('Making (deleting if needed) previous executable generation directories')
+    logging.info(('Making (deleting if needed) previous executable '
+                  'generation directories'))
     try:
         appinfo.make_dirs_zip()
     except OSError, e:

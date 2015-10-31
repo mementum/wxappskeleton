@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 # Copyright (C) 2014 Daniel Rodriguez
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
 import sys
 
-PRINT_MESSAGES=False
+
+PRINT_MESSAGES = False
+
 
 if sys.platform != 'win32':
     def WndProcManage(wnd):
@@ -46,7 +48,8 @@ else:
                     value = getattr(win32con, name)
                     msgdict[value] = name
 
-        _oldWndProc = win32gui.GetWindowLong(wnd.GetHandle(), win32con.GWL_WNDPROC)
+        _oldWndProc = win32gui.GetWindowLong(wnd.GetHandle(),
+                                             win32con.GWL_WNDPROC)
 
         def MyWndProc(self, hwnd, msg, wParam, lParam):
             # Display what we've got.
@@ -57,7 +60,9 @@ else:
             # instead of win32gui here.  This is to avoid an error due to
             # not passing a callable object.
             if msg == win32con.WM_DESTROY:
-                win32api.SetWindowLong(self.GetHandle(), win32con.GWL_WNDPROC, _oldWndProc)
+                win32api.SetWindowLong(self.GetHandle(),
+                                       win32con.GWL_WNDPROC,
+                                       _oldWndProc)
 
             stopproc = False
             for cb, cbtrigger in CALLBACKS[self]:
@@ -68,14 +73,20 @@ else:
 
             if stopproc:
                 return
-            # Pass all messages (in this case, yours may be different) on to the original WndProc
-            return win32gui.CallWindowProc(_oldWndProc, hwnd, msg, wParam, lParam)
+            # Pass all messages (in this case, yours may be different) on to
+            # the original WndProc
+            return win32gui.CallWindowProc(_oldWndProc,
+                                           hwnd, msg,
+                                           wParam,
+                                           lParam)
 
         # Bind the function to the passed object
         _newWndProc = MyWndProc.__get__(wnd, wnd.__class__)
 
         # Set the WndProc to our function
-        win32gui.SetWindowLong(wnd.GetHandle(), win32con.GWL_WNDPROC, _newWndProc)
+        win32gui.SetWindowLong(wnd.GetHandle(),
+                               win32con.GWL_WNDPROC,
+                               _newWndProc)
         return True
 
     CALLBACKS = collections.defaultdict(list)
@@ -108,12 +119,25 @@ else:
         hSysMenu = win32gui.GetSystemMenu(wnd.GetHandle(), False)
         if not hSysMenu:
             return False
-        win32gui.InsertMenu(hSysMenu, 0, win32con.MF_BYPOSITION | win32con.MF_SEPARATOR, 0, '');
-        win32gui.InsertMenu(hSysMenu, 0, win32con.MF_BYPOSITION, SYS_MENU_RELOAD_MODULES, 'Reload Modules')
+        win32gui.InsertMenu(hSysMenu,
+                            0,
+                            win32con.MF_BYPOSITION | win32con.MF_SEPARATOR,
+                            0,
+                            '')
+
+        win32gui.InsertMenu(hSysMenu,
+                            0,
+                            win32con.MF_BYPOSITION,
+                            SYS_MENU_RELOAD_MODULES,
+                            'Reload Modules')
 
         def HandleSystemMenu(wnd, msg, wparam, lparam):
             wnd.__class__._reload_modules()
             return False
 
-        AddCallback(HandleSystemMenu, wnd, win32con.WM_SYSCOMMAND, SYS_MENU_RELOAD_MODULES, None)
+        AddCallback(HandleSystemMenu,
+                    wnd,
+                    win32con.WM_SYSCOMMAND,
+                    SYS_MENU_RELOAD_MODULES,
+                    None)
         return True

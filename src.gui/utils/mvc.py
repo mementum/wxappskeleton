@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,16 +17,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
 import functools
 import inspect
-from pubsub import pub
+# from pubsub import pub
 import sys
 import types
 import weakref
 import wx
+from wx.lib.pubsub import pub
 
 from utils.doout import doout
+
 
 class DynBindSlave(object):
     def __init__(self, name):
@@ -48,9 +50,11 @@ class DynBindSlave(object):
         func._dynbinding.append(self._dynbinding[:])
         return func
 
+
 class MetaDynBind(type):
     def __getattribute__(cls, name):
         return DynBindSlave(name)
+
 
 class DynBind(object):
     __metaclass__ = MetaDynBind
@@ -69,8 +73,9 @@ def _reload_modules(cls, reloading=True):
             clsmodname = '.'.join(clsmodname[:-1])
         else:
             clsmodname = cls.__module__
-            
-        clssubmodname =  clsmodname + '.' + modname + '.' + cls.__name__.lower()
+
+        clssubmodname = (clsmodname + '.' + modname +
+                         '.' + cls.__name__.lower())
         doout('clssubmodname is', clssubmodname)
 
         try:
@@ -89,6 +94,7 @@ def _reload_modules(cls, reloading=True):
 
     return results
 
+
 def load_submodule(cls, submod, reloading, results):
     load_methods(cls, submod, reloading)
 
@@ -98,6 +104,7 @@ def load_submodule(cls, submod, reloading, results):
         if submod.__package__ and submod.__package__ == submod.__name__:
             doout('loading package', submod.__name__)
             load_package(cls, submod, reloading, results)
+
 
 def load_package(cls, package, reloading, results):
     for modname in dir(package):
@@ -120,6 +127,7 @@ def load_package(cls, package, reloading, results):
             # mod = getattr(module, modname)
             doout('loading submodule', mod.__name__)
             load_submodule(cls, mod, reloading, results)
+
 
 def load_methods(cls, module, reloading):
     def fgetter(funcname):
@@ -147,20 +155,22 @@ def load_methods(cls, module, reloading):
             funcgetter._dynbinding = getattr(func, '_dynbinding', None)
             setattr(cls, funcname, funcgetter)
 
+
 def _unbindfuncs(self):
     # I would need a list of the functions that been bound to unbind them
     while True:
         try:
             widget, event, dynboundmethod = self._dynbindings.pop()
         except IndexError:
-            break # no more items in the list
+            break  # no more items in the list
         else:
             if event in [wx.EVT_MENU, wx.EVT_TOOL]:
                 self.Unbind(event, handler=dynboundmethod, id=widget.GetId())
-            elif event in [wx.EVT_SIZE,]:
+            elif event in [wx.EVT_SIZE]:
                 self.Unbind(event, handler=dynboundmethod)
             else:
                 widget.Unbind(event, handler=dynboundmethod)
+
 
 def _bindfuncs(self):
     # wx classes throw exception if getmember is applied to the instance (self)
@@ -194,17 +204,20 @@ def _bindfuncs(self):
                 self._dynbindings.append((widget, event, boundmethod))
                 if event in [wx.EVT_MENU, wx.EVT_TOOL]:
                     self.Bind(event, boundmethod, id=widget.GetId())
-                elif event in [wx.EVT_SIZE,]:
+                elif event in [wx.EVT_SIZE]:
                     self.Bind(event, boundmethod)
                 else:
                     widget.Bind(event, boundmethod)
+
 
 def _inits(self, *args, **kwargs):
     for module, init in self._dyninits.iteritems():
         # Module could be helpful in debugging
         init(self, *args, **kwargs)
 
+
 def _subscribe(self):
+
     def sgetter(funcname):
         def realsgetter(owner, msg):
             return owner._subs[funcname](owner, msg)
@@ -218,9 +231,12 @@ def _subscribe(self):
         if pubsubtopic:
             self._subs[mname] = method
             subsgetter = sgetter(mname)
-            if not topicmgr.getTopic(pubsubtopic, True) or not pub.isSubscribed(subsgetter, pubsubtopic):
+            if (not topicmgr.getTopic(pubsubtopic, True) or
+                not pub.isSubscribed(subsgetter, pubsubtopic)):
+
                 setattr(self, mname, subsgetter)
-                pub.subscribe(subsgetter.__get__(self, self.__class__), pubsubtopic)
+                pub.subscribe(subsgetter.__get__(self, self.__class__),
+                              pubsubtopic)
 
 
 def DynamicClass(moddirs=None):
@@ -240,6 +256,7 @@ def DynamicClass(moddirs=None):
         _basecls = cls.__bases__[0]
         if _basecls is not object:
             _baseoldinit = _basecls.__init__
+
             def _basenewinit(self, *args, **kwargs):
                 _baseoldinit(self, *args, **kwargs)
                 self._inits(*args, **kwargs)
@@ -267,11 +284,13 @@ def DynamicClass(moddirs=None):
 
     return ClassWrapper
 
+
 def PubRecv(topic):
     def decorate(func):
         func._pubrecv = topic
         return func
     return decorate
+
 
 def PubSend(topic, queue=True):
     def decorate(func):

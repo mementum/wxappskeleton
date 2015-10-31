@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,17 +17,4 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
-import sys
-
-def doout(*args):
-    if False:
-        frame = sys._getframe(1)
-        funcname = frame.f_code.co_name
-        if 'self' in frame.f_locals:
-            funcname = frame.f_locals['self'].__class__.__name__ + '.' + funcname
-
-        print funcname, '(', args, ')'
-    return True
-
-
+###############################################################################

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*- 
 
 ###########################################################################
-## Python code generated with wxFormBuilder (version Jun  5 2014)
+## Python code generated with wxFormBuilder (version Jun 17 2015)
 ## http://www.wxformbuilder.org/
 ##
 ## PLEASE DO "NOT" EDIT THIS FILE!
@@ -28,7 +28,7 @@ class MainFrame ( wx.Frame ):
 		
 		sbSizer1 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel1, wx.ID_ANY, u"Sample Text" ), wx.VERTICAL )
 		
-		self.m_textCtrlSampleText = wx.TextCtrl( self.m_panel1, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,75 ), wx.TE_MULTILINE )
+		self.m_textCtrlSampleText = wx.TextCtrl( sbSizer1.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,75 ), wx.TE_MULTILINE )
 		sbSizer1.Add( self.m_textCtrlSampleText, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 5 )
 		
 		
@@ -42,7 +42,7 @@ class MainFrame ( wx.Frame ):
 		
 		sbSizer2 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel1, wx.ID_ANY, u"Sample Text 2" ), wx.VERTICAL )
 		
-		self.m_textCtrlSampleText2 = wx.TextCtrl( self.m_panel1, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( -1,75 ), wx.TE_MULTILINE )
+		self.m_textCtrlSampleText2 = wx.TextCtrl( sbSizer2.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( -1,75 ), wx.TE_MULTILINE )
 		sbSizer2.Add( self.m_textCtrlSampleText2, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 5 )
 		
 		
@@ -78,10 +78,10 @@ class MainFrame ( wx.Frame ):
 		bSizer4 = wx.BoxSizer( wx.HORIZONTAL )
 		
 		m_comboBoxTestChoices = []
-		self.m_comboBoxTest = wx.ComboBox( self.m_panel1, wx.ID_ANY, u"Combo!", wx.DefaultPosition, wx.DefaultSize, m_comboBoxTestChoices, 0 )
+		self.m_comboBoxTest = wx.ComboBox( sbSizer3.GetStaticBox(), wx.ID_ANY, u"Combo!", wx.DefaultPosition, wx.DefaultSize, m_comboBoxTestChoices, 0 )
 		bSizer4.Add( self.m_comboBoxTest, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
-		self.m_button5 = wx.Button( self.m_panel1, wx.ID_ANY, u"Clear Combo", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_button5 = wx.Button( sbSizer3.GetStaticBox(), wx.ID_ANY, u"Clear Combo", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_button5.Enable( False )
 		
 		bSizer4.Add( self.m_button5, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
@@ -91,10 +91,10 @@ class MainFrame ( wx.Frame ):
 		
 		bSizer5 = wx.BoxSizer( wx.HORIZONTAL )
 		
-		self.m_buttonAddElement = wx.Button( self.m_panel1, wx.ID_ANY, u"Add Element", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_buttonAddElement = wx.Button( sbSizer3.GetStaticBox(), wx.ID_ANY, u"Add Element", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer5.Add( self.m_buttonAddElement, 0, wx.ALL, 5 )
 		
-		self.m_button7 = wx.Button( self.m_panel1, wx.ID_ANY, u"MyButton", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_button7 = wx.Button( sbSizer3.GetStaticBox(), wx.ID_ANY, u"MyButton", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer5.Add( self.m_button7, 0, wx.ALL, 5 )
 		
 		
