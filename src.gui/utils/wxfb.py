@@ -30,6 +30,7 @@ import wx
 
 from configcls import MutableSequence
 from utils.doout import doout
+from utils.mvc import PubSend
 
 
 class BindingAny(object):
@@ -342,7 +343,10 @@ class BindingWidget(object):
             if hasattr(method, AutoBind.attrname):
                 event = getattr(wx, method._event_name)
                 boundmethod = method.__get__(self, self.__class__)
+                pubname = method._event_name.lower() + '.' + self.name
+                boundmethod = PubSend(pubname)(boundmethod)
                 self.widget.Bind(event, boundmethod)
+                # self.owner.Bind(event, boundmethod, id=self.widget.GetId())
             elif hasattr(method, AutoCallback.attrname):
                 boundmethod = method.__get__(self, self.__class__)
                 attr = getattr(self.__class__, method._var_name, None)
