@@ -367,6 +367,8 @@ class BindingWidget(object):
 class BindingSpinCtrl(BindingWidget):
     wprefix = 'spinCtrl'
     bindings = (
+        ('max', BindingInt, dict(default=100)),
+        ('min', BindingInt, dict(default=0)),
         ('value', BindingInt),
     )
 
@@ -378,29 +380,31 @@ class BindingSpinCtrl(BindingWidget):
     def OnSpinCtrl(self, event):
         assert doout(event)
         event.Skip()
-        # self.value = event.GetInt()
-        # This avoids a callback to
         self._set('value', event.GetInt())
 
     @AutoCallback.value
     def OnValueChange(self, value):
         assert doout(value)
-        self.widget.SetValue(value)
+        newvalue = min(self.max, max(self.min, value))
+
+        if value != newvalue:
+            self._set('value', newvalue)
+
+        self.widget.SetValue(newvalue)
 
     @AutoCallback.min
     def OnMinChange(self, minval):
         assert doout(minval)
-        maxval = self.widget.GetMax()
         self.widget.SetRange(minval, self.max)
         if self.value < minval:
-            self.value = minval
+            self._set('value', minval)
 
     @AutoCallback.max
     def OnMaxChange(self, maxval):
         assert doout(maxval)
         self.widget.SetRange(self.min, maxval)
         if self.value > maxval:
-            self.value = maxval
+            self._set('value', maxval)
 
 
 class BindingCheckBox(BindingWidget):
