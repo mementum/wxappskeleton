@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
 from utils.mvc import PubRecv
 import wx
+
+if True:
+    def SpinCtrlReaction(self):
+        wx.MessageBox('SpinCtrl Reaction', 'SpinCtrl Reaction')
 
 if True:
     def ClickedMe(self):
