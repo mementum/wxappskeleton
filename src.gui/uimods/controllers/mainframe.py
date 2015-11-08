@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
-################################################################################
-# 
+###############################################################################
+#
 #  Copyright (C) 2014 Daniel Rodriguez
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,10 +17,55 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+###############################################################################
 from uimods.aboutdialog import AboutDialog
-from utils.mvc import DynBind
+from utils.mvc import DynBind, PubRecv
+import utils.wxfb as wxfb
 import wx
+
+import models.mainmodel as mainmodel
+
+if True:
+    def __init__(self, parent):
+        # maingui.MainFrame.__init__(self, parent)
+
+        wxfb.BindingCheckBox('samestatus')
+        wxfb.BindingComboBox('test')
+        wxfb.BindingTextCtrlFocus('sometext')
+
+        wxfb.BindingSpinCtrl('spintest',
+                             min=dict(default=5),
+                             max=dict(default=25))
+
+        wxfb.BindingCheckBox('spintestreaction', default=False)
+
+        wxfb.BindingTextCtrlFocus('spintestmintext',
+                                  default=str(self.spintest.min))
+
+        wxfb.BindingButton('spintestmaxset')
+        wxfb.BindingButton('spintestminset')
+
+        wxfb.BindingTextCtrlFocus('spintestmaxtext',
+                                  default=str(self.spintest.max))
+
+        self.model = mainmodel.MainModel()
+
+if True:
+    @PubRecv('evt_spinctrl.spintest')
+    def OnSpinCtrl(self, msg):
+        if self.spintestreaction.value:
+            self.view.SpinCtrlReaction()
+            pass
+
+    @PubRecv('evt_button.spintestmaxset')
+    def OnSpinTestMaxSet(self, msg):
+        value = int(self.spintestmaxtext.value)
+        self.spintest.max = value
+
+    @PubRecv('evt_button.spintestminset')
+    def OnSpinTestMinSet(self, msg):
+        value = int(self.spintestmintext.value)
+        self.spintest.min = value
 
 if True:
     @DynBind.EVT_BUTTON.Button.ClickMe
@@ -75,4 +120,3 @@ if True:
         event.Skip()
         dialog = AboutDialog(self)
         dialog.ShowModal()
-
