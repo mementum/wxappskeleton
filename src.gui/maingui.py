@@ -24,7 +24,9 @@ class MainFrame ( wx.Frame ):
 		bSizer1 = wx.BoxSizer( wx.VERTICAL )
 		
 		self.m_panel1 = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		bSizer2 = wx.BoxSizer( wx.VERTICAL )
+		bSizer2 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		bSizer11 = wx.BoxSizer( wx.VERTICAL )
 		
 		sbSizer1 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel1, wx.ID_ANY, u"Sample Text" ), wx.VERTICAL )
 		
@@ -32,13 +34,13 @@ class MainFrame ( wx.Frame ):
 		sbSizer1.Add( self.m_textCtrlSampleText, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 5 )
 		
 		
-		bSizer2.Add( sbSizer1, 1, wx.EXPAND, 5 )
+		bSizer11.Add( sbSizer1, 1, wx.EXPAND, 5 )
 		
 		self.m_staticline1 = wx.StaticLine( self.m_panel1, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		bSizer2.Add( self.m_staticline1, 0, wx.EXPAND |wx.ALL, 5 )
+		bSizer11.Add( self.m_staticline1, 0, wx.EXPAND |wx.ALL, 5 )
 		
 		self.m_checkBoxSameStatus = wx.CheckBox( self.m_panel1, wx.ID_ANY, u"I will have the same status upon restart (unless registry is cleared)", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer2.Add( self.m_checkBoxSameStatus, 0, wx.ALL, 5 )
+		bSizer11.Add( self.m_checkBoxSameStatus, 0, wx.ALL, 5 )
 		
 		sbSizer2 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel1, wx.ID_ANY, u"Sample Text 2" ), wx.VERTICAL )
 		
@@ -46,7 +48,7 @@ class MainFrame ( wx.Frame ):
 		sbSizer2.Add( self.m_textCtrlSampleText2, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 5 )
 		
 		
-		bSizer2.Add( sbSizer2, 0, wx.EXPAND, 5 )
+		bSizer11.Add( sbSizer2, 0, wx.EXPAND, 5 )
 		
 		bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -71,7 +73,7 @@ class MainFrame ( wx.Frame ):
 		bSizer3.Add( self.m_button4, 0, wx.ALL, 5 )
 		
 		
-		bSizer2.Add( bSizer3, 0, wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		bSizer11.Add( bSizer3, 0, wx.ALIGN_CENTER_HORIZONTAL, 5 )
 		
 		sbSizer3 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel1, wx.ID_ANY, u"label" ), wx.VERTICAL )
 		
@@ -101,10 +103,10 @@ class MainFrame ( wx.Frame ):
 		sbSizer3.Add( bSizer5, 1, wx.ALIGN_CENTER_HORIZONTAL, 5 )
 		
 		
-		bSizer2.Add( sbSizer3, 0, wx.EXPAND, 5 )
+		bSizer11.Add( sbSizer3, 0, wx.EXPAND, 5 )
 		
 		self.m_staticline4 = wx.StaticLine( self.m_panel1, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		bSizer2.Add( self.m_staticline4, 0, wx.EXPAND |wx.ALL, 5 )
+		bSizer11.Add( self.m_staticline4, 0, wx.EXPAND |wx.ALL, 5 )
 		
 		bSizer6 = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -119,7 +121,7 @@ class MainFrame ( wx.Frame ):
 		bSizer6.Add( self.m_buttonClearSomeText, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
 		
-		bSizer2.Add( bSizer6, 0, wx.EXPAND, 5 )
+		bSizer11.Add( bSizer6, 0, wx.EXPAND, 5 )
 		
 		bSizer10 = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -127,7 +129,61 @@ class MainFrame ( wx.Frame ):
 		bSizer10.Add( self.m_buttonAboutDialog, 0, wx.ALL, 5 )
 		
 		
-		bSizer2.Add( bSizer10, 0, wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		bSizer11.Add( bSizer10, 0, wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		
+		
+		bSizer2.Add( bSizer11, 1, wx.EXPAND, 5 )
+		
+		sbSizer4 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel1, wx.ID_ANY, u"SpinCtrl" ), wx.VERTICAL )
+		
+		bSizer12 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText4 = wx.StaticText( sbSizer4.GetStaticBox(), wx.ID_ANY, u"Change me", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText4.Wrap( -1 )
+		bSizer12.Add( self.m_staticText4, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		
+		self.m_spinCtrlSpinTest = wx.SpinCtrl( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 0, 10, 0 )
+		bSizer12.Add( self.m_spinCtrlSpinTest, 0, wx.ALL, 5 )
+		
+		self.m_staticline6 = wx.StaticLine( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+		bSizer12.Add( self.m_staticline6, 0, wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_checkBoxSpinTestReaction = wx.CheckBox( sbSizer4.GetStaticBox(), wx.ID_ANY, u"MessageBox on SpinCtrl Event", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer12.Add( self.m_checkBoxSpinTestReaction, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		
+		
+		sbSizer4.Add( bSizer12, 1, wx.EXPAND, 5 )
+		
+		bSizer13 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText5 = wx.StaticText( sbSizer4.GetStaticBox(), wx.ID_ANY, u"Min", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText5.Wrap( -1 )
+		bSizer13.Add( self.m_staticText5, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		
+		self.m_textCtrlSpinTestMinText = wx.TextCtrl( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer13.Add( self.m_textCtrlSpinTestMinText, 0, wx.ALL, 5 )
+		
+		self.m_buttonSpinTestMinSet = wx.Button( sbSizer4.GetStaticBox(), wx.ID_ANY, u"Set", wx.DefaultPosition, wx.DefaultSize, wx.BU_EXACTFIT )
+		bSizer13.Add( self.m_buttonSpinTestMinSet, 0, wx.ALL, 5 )
+		
+		self.m_staticline5 = wx.StaticLine( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+		bSizer13.Add( self.m_staticline5, 0, wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_staticText6 = wx.StaticText( sbSizer4.GetStaticBox(), wx.ID_ANY, u"Max", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText6.Wrap( -1 )
+		bSizer13.Add( self.m_staticText6, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		
+		self.m_textCtrlSpinTestMaxText = wx.TextCtrl( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer13.Add( self.m_textCtrlSpinTestMaxText, 0, wx.ALL, 5 )
+		
+		self.m_buttonSpinTestMaxSet = wx.Button( sbSizer4.GetStaticBox(), wx.ID_ANY, u"Set", wx.DefaultPosition, wx.DefaultSize, wx.BU_EXACTFIT )
+		bSizer13.Add( self.m_buttonSpinTestMaxSet, 0, wx.ALL, 5 )
+		
+		
+		sbSizer4.Add( bSizer13, 1, wx.EXPAND, 5 )
+		
+		
+		bSizer2.Add( sbSizer4, 0, 0, 5 )
 		
 		
 		self.m_panel1.SetSizer( bSizer2 )
