@@ -83,10 +83,11 @@ class MainApp(wx.App):
 
         # Create the frame
         self.view = mainframe.MainFrame(parent=None)
-        if not appconstants.appisfrozen():
-            # Add system menuentry
-            if False and not utils.systemmenu.AddSystemReloadMenu(self.view):
-                wx.MessageBox('Could not install system menu', 'Error')
+        if False:
+            if not appconstants.appisfrozen():
+                # Add system menuentry
+                if not utils.systemmenu.AddSystemReloadMenu(self.view):
+                    wx.MessageBox('Could not install system menu', 'Error')
 
         title = appconstants.AppTitle + ' - ' + appconstants.AppVersion
         self.view.SetTitle(title)
