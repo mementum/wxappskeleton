@@ -52,7 +52,10 @@ if True:
     @DynBind.EVT_BUTTON.Button.AddElement
     def OnButtonClickAddElement(self, event):
         event.Skip()
-        dlg = wx.TextEntryDialog(parent=self, message='Enter text', caption='New Entry', defaultValue='')
+        dlg = wx.TextEntryDialog(parent=self,
+                                 message='Enter text',
+                                 caption='New Entry',
+                                 defaultValue='')
         retcode = dlg.ShowModal()
         if retcode == wx.ID_OK:
             print 'ok pressed'
