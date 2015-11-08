@@ -266,6 +266,8 @@ def WidgetBindings(cls):
 
 
 class BindingWidget(object):
+    bindings = {}
+
     wprefix = None
 
     def __init__(self, name, **kwargs):
