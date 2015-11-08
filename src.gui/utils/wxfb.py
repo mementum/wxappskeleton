@@ -48,7 +48,6 @@ class BindingAny(object):
         self.defaults = dict()
 
         self.doconfig = kwargs.get('config', True)
-        # self.defval = kwargs.get('default', None)
         self.defval = kwargs.get('default', self.__class__.defclass())
         self.install()
 
@@ -368,6 +367,19 @@ class BindingWidget(object):
             # avoiding a recursion
             widget = object.__getattribute(self, 'widget')
             return getattr(widget, name)
+
+
+class BindingButton(BindingWidget):
+    wprefix = 'button'
+    def __init__(self, name, **kwargs):
+        assert doout(name, kwargs)
+        BindingWidget.__init__(self, name, **kwargs)
+
+    @AutoBind.EVT_BUTTON
+    def OnButton(self, event):
+        # Present to generate pub events
+        assert doout(event)
+        event.Skip()
 
 
 class BindingSpinCtrl(BindingWidget):
