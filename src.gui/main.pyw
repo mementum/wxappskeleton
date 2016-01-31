@@ -94,6 +94,8 @@ class MainApp(wx.App):
 
         # Set the top window - no longer needed in recent wxPython versions
         # self.SetTopWindow(self.view)
+        self.view.SetMinSize(self.view.GetSizer().GetMinSize())
+        self.view.Fit()
         self.view.Show(True)
         self.view.Raise()
 
