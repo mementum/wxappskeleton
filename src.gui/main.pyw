@@ -66,7 +66,7 @@ class MainApp(wx.App):
             # let the platform decide what and where
             config = wx.ConfigBase.Get()
         else:
-            close(f)
+            f.close()
             # portable
             config = wx.FileConfig(appName=appconstants.AppName,
                                    vendorName=appconstants.VendorName,
