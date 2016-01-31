@@ -719,7 +719,7 @@ class BindingFilePicker(BindingWidget):
 
     @AutoCallback.path
     def OnPathChange(self, path):
-        assert doout(value)
+        assert doout(path)
         # FIXME: Should this check if the input is a real valid file?
         # Alternative the BindingString can be marked as read-only
         # (need to develop) and only settable via a direct call to
